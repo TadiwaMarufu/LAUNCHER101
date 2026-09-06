@@ -566,6 +566,7 @@ fun WeatherCard(
     config: ProfileConfig,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
@@ -607,6 +608,7 @@ fun SystemTelemetryCard(
     config: ProfileConfig,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
