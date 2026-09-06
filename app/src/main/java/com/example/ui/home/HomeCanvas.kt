@@ -318,6 +318,7 @@ fun HomeCanvas(
                                         showIconLabels &&
                                             config.showAppLabels,
                                     profile = profile,
+                                    config = config,
                                     modifier =
                                         Modifier.fillMaxSize()
                                 )
