@@ -393,6 +393,7 @@ private fun AppCanvasItem(
     iconShape: IconShape,
     showLabel: Boolean,
     profile: LauncherProfile,
+    config: ProfileConfig,
     modifier: Modifier = Modifier
 ) {
     val appearance = LocalLauncherAppearance.current
