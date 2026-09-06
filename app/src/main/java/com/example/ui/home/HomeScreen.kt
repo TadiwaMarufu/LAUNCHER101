@@ -189,7 +189,11 @@ fun HomeScreen(
 
             LauncherHomeStage(
                 config = profileConfig,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onSearch = {
+                    overlayState = LauncherOverlayState.SEARCH
+                    editMode = false
+                }
             ) {
                 HomeCanvas(
                     items = state.homeItems,
@@ -292,7 +296,7 @@ fun HomeScreen(
                         overlayState =
                             LauncherOverlayState.SETTINGS
                     }
-                )
+                    )
             }
 
             /*

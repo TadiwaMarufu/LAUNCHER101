@@ -131,10 +131,10 @@ fun HomeCanvas(
          */
         val compositionScale = when (config.homeLayout) {
             HomeLayoutStyle.FLUID_ORGANIC -> 1.00f
-            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.985f
-            HomeLayoutStyle.CALM_MINIMALIST -> 0.955f
-            HomeLayoutStyle.FOCUS_DASHBOARD -> 1.00f
-            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.035f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.96f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.92f
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 0.98f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.03f
         }
 
         val compositionAlpha = when (config.homeLayout) {
@@ -146,28 +146,19 @@ fun HomeCanvas(
         }
 
         val canvasInset = when (config.homeLayout) {
-            HomeLayoutStyle.FLUID_ORGANIC -> 2.dp
-            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 4.dp
-            HomeLayoutStyle.CALM_MINIMALIST -> 7.dp
-            HomeLayoutStyle.FOCUS_DASHBOARD -> 1.dp
-            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 0.dp
+            HomeLayoutStyle.FLUID_ORGANIC -> 3.dp
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 5.dp
+            HomeLayoutStyle.CALM_MINIMALIST -> 8.dp
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 3.dp
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 2.dp
         }
 
         val itemCornerRadius = when (config.homeLayout) {
-            HomeLayoutStyle.FLUID_ORGANIC ->
-                config.cornerRadius
-
-            HomeLayoutStyle.PREMIUM_ARCHITECTURAL ->
-                config.cornerRadius * 0.82f
-
-            HomeLayoutStyle.CALM_MINIMALIST ->
-                config.cornerRadius * 0.70f
-
-            HomeLayoutStyle.FOCUS_DASHBOARD ->
-                config.cornerRadius * 0.62f
-
-            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE ->
-                config.cornerRadius * 1.18f
+            HomeLayoutStyle.FLUID_ORGANIC -> 22.dp
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 18.dp
+            HomeLayoutStyle.CALM_MINIMALIST -> 16.dp
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 14.dp
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 28.dp
         }
 
         val editSurfaceAlpha = when (config.homeLayout) {
