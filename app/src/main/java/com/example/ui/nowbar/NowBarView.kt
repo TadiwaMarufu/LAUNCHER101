@@ -84,13 +84,48 @@ fun NowBarView(
         )
     }
 
+    val horizontalPadding = when (config.nowBarStyle) {
+        NowBarStyle.FLUID_PILL -> 14.dp
+        NowBarStyle.PREMIUM_BORDERED -> 16.dp
+        NowBarStyle.CALM_ZEN -> 18.dp
+        NowBarStyle.FOCUS_ACTIONABLE -> 12.dp
+        NowBarStyle.EXPRESSIVE_CAPSULE -> 16.dp
+    }
+
+    val verticalPadding = when (config.nowBarStyle) {
+        NowBarStyle.FLUID_PILL -> 10.dp
+        NowBarStyle.PREMIUM_BORDERED -> 9.dp
+        NowBarStyle.CALM_ZEN -> 8.dp
+        NowBarStyle.FOCUS_ACTIONABLE -> 8.dp
+        NowBarStyle.EXPRESSIVE_CAPSULE -> 12.dp
+    }
+
+    val actionSize = when (config.nowBarStyle) {
+        NowBarStyle.FLUID_PILL -> 38.dp
+        NowBarStyle.PREMIUM_BORDERED -> 36.dp
+        NowBarStyle.CALM_ZEN -> 34.dp
+        NowBarStyle.FOCUS_ACTIONABLE -> 40.dp
+        NowBarStyle.EXPRESSIVE_CAPSULE -> 42.dp
+    }
+
+    val actionSpacing = when (config.nowBarStyle) {
+        NowBarStyle.FLUID_PILL -> 4.dp
+        NowBarStyle.PREMIUM_BORDERED -> 6.dp
+        NowBarStyle.CALM_ZEN -> 8.dp
+        NowBarStyle.FOCUS_ACTIONABLE -> 4.dp
+        NowBarStyle.EXPRESSIVE_CAPSULE -> 6.dp
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(barShape)
             .background(backgroundBrush)
             .border(appearance.borderWidth.dp, appearance.divider, barShape)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(
+                horizontal = horizontalPadding,
+                vertical = verticalPadding
+            )
             .animateContentSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -102,10 +137,43 @@ fun NowBarView(
             // Profile switcher pill on the left
             Row(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(appearance.primary.copy(alpha = 0.25f))
+                    .clip(
+                        when (config.nowBarStyle) {
+                            NowBarStyle.PREMIUM_BORDERED ->
+                                RoundedCornerShape(12.dp)
+
+                            NowBarStyle.FOCUS_ACTIONABLE ->
+                                RoundedCornerShape(10.dp)
+
+                            else ->
+                                CircleShape
+                        }
+                    )
+                    .background(
+                        appearance.primary.copy(
+                            alpha = when (config.nowBarStyle) {
+                                NowBarStyle.CALM_ZEN -> 0.10f
+                                NowBarStyle.PREMIUM_BORDERED -> 0.08f
+                                NowBarStyle.FOCUS_ACTIONABLE -> 0.14f
+                                NowBarStyle.EXPRESSIVE_CAPSULE -> 0.20f
+                                else -> 0.16f
+                            }
+                        )
+                    )
                     .clickable { onProfileChipClick() }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(
+                        horizontal =
+                            when (config.nowBarStyle) {
+                                NowBarStyle.CALM_ZEN -> 10.dp
+                                NowBarStyle.PREMIUM_BORDERED -> 11.dp
+                                else -> 12.dp
+                            },
+                        vertical =
+                            when (config.nowBarStyle) {
+                                NowBarStyle.CALM_ZEN -> 6.dp
+                                else -> 8.dp
+                            }
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -158,7 +226,8 @@ fun NowBarView(
             // Right: Primary launcher shortcuts (Search, Drawer, Settings)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement =
+                    Arrangement.spacedBy(actionSpacing)
             ) {
                 items.filter {
                     it.type in listOf(
@@ -169,9 +238,26 @@ fun NowBarView(
                 }.forEach { item ->
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(actionSize)
                             .clip(CircleShape)
-                            .background(appearance.surface.copy(alpha = 0.4f))
+                            .background(
+                                when (config.nowBarStyle) {
+                                    NowBarStyle.CALM_ZEN ->
+                                        appearance.surface.copy(alpha = 0.22f)
+
+                                    NowBarStyle.PREMIUM_BORDERED ->
+                                        appearance.surface.copy(alpha = 0.34f)
+
+                                    NowBarStyle.FOCUS_ACTIONABLE ->
+                                        appearance.primary.copy(alpha = 0.08f)
+
+                                    NowBarStyle.EXPRESSIVE_CAPSULE ->
+                                        appearance.primary.copy(alpha = 0.12f)
+
+                                    NowBarStyle.FLUID_PILL ->
+                                        appearance.surface.copy(alpha = 0.40f)
+                                }
+                            )
                             .clickable {
                                 when (item.type) {
                                     NowBarType.ACTION_SEARCH -> onSearchClick()
