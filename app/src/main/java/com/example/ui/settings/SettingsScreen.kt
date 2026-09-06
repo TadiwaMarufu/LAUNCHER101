@@ -51,6 +51,7 @@ import com.example.core.LauncherDependencies
 import com.example.core.model.IconShape
 import com.example.core.model.QualityTier
 import com.example.core.model.WallpaperPreset
+import com.example.ui.theme.LocalLauncherAppearance
 
 @Composable
 fun SettingsScreen(
@@ -59,6 +60,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val appearance = LocalLauncherAppearance.current
 
     val dependencies = LauncherDependencies.get(context)
 
@@ -67,15 +69,16 @@ fun SettingsScreen(
     )
 
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
-
     val scrollState = rememberScrollState()
-
     val activeProfile = state.activeProfile
+
+    val sectionShape = RoundedCornerShape(appearance.cornerRadius.dp)
+    val itemShape = RoundedCornerShape((appearance.cornerRadius * 0.66f).dp)
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0C0915))
+            .background(appearance.background)
             .padding(
                 top = 16.dp,
                 start = 20.dp,
@@ -92,12 +95,12 @@ fun SettingsScreen(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF191328))
+                    .background(appearance.surface)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White
+                    tint = appearance.onSurface
                 )
             }
 
@@ -109,14 +112,14 @@ fun SettingsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = Color(0xFFA855F7)
+                    color = activeProfile.primaryAccent
                 )
 
                 Text(
                     text = "The Purple Launcher",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = appearance.onBackground
                 )
             }
         }
@@ -130,24 +133,21 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ---------------------------------------------------------
-            // Personality & Identity
-            // ---------------------------------------------------------
-
             SettingsSectionHeader(
                 title = "Personality & Identity",
-                icon = Icons.Rounded.Tune
+                icon = Icons.Rounded.Tune,
+                accent = activeProfile.primaryAccent
             )
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF161126))
+                    .clip(sectionShape)
+                    .background(appearance.surface)
                     .border(
-                        width = 1.dp,
+                        width = appearance.borderWidth.dp,
                         color = activeProfile.primaryAccent.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = sectionShape
                     )
                     .clickable {
                         onOpenProfileSwitcher()
@@ -176,7 +176,7 @@ fun SettingsScreen(
                                 text = "Active: ${activeProfile.title}",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = appearance.onSurface
                             )
                         }
 
@@ -191,7 +191,7 @@ fun SettingsScreen(
 
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(itemShape)
                             .background(
                                 activeProfile.primaryAccent.copy(alpha = 0.2f)
                             )
@@ -210,20 +210,17 @@ fun SettingsScreen(
                 }
             }
 
-            // ---------------------------------------------------------
-            // Atmosphere & Icons
-            // ---------------------------------------------------------
-
             SettingsSectionHeader(
                 title = "Atmosphere & Icons",
-                icon = Icons.Rounded.Wallpaper
+                icon = Icons.Rounded.Wallpaper,
+                accent = activeProfile.primaryAccent
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF161126))
+                    .clip(sectionShape)
+                    .background(appearance.surface)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -231,7 +228,7 @@ fun SettingsScreen(
                     text = "WALLPAPER PRESET",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFA89BB9)
+                    color = appearance.onSurfaceVariant
                 )
 
                 Row(
@@ -244,12 +241,12 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(itemShape)
                                 .background(
                                     if (isSelected) {
                                         activeProfile.primaryAccent
                                     } else {
-                                        Color(0xFF221A37)
+                                        appearance.elevatedSurface
                                     }
                                 )
                                 .clickable {
@@ -267,9 +264,9 @@ fun SettingsScreen(
                                     FontWeight.Normal
                                 },
                                 color = if (isSelected) {
-                                    Color.White
+                                    activeProfile.primaryAccent.contrastColor()
                                 } else {
-                                    Color(0xFFA89BB9)
+                                    appearance.onSurfaceVariant
                                 }
                             )
                         }
@@ -282,7 +279,7 @@ fun SettingsScreen(
                     text = "ICON SHAPE",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFA89BB9)
+                    color = appearance.onSurfaceVariant
                 )
 
                 Row(
@@ -295,12 +292,12 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(itemShape)
                                 .background(
                                     if (isSelected) {
                                         activeProfile.primaryAccent
                                     } else {
-                                        Color(0xFF221A37)
+                                        appearance.elevatedSurface
                                     }
                                 )
                                 .clickable {
@@ -318,9 +315,9 @@ fun SettingsScreen(
                                     FontWeight.Normal
                                 },
                                 color = if (isSelected) {
-                                    Color.White
+                                    activeProfile.primaryAccent.contrastColor()
                                 } else {
-                                    Color(0xFFA89BB9)
+                                    appearance.onSurfaceVariant
                                 }
                             )
                         }
@@ -335,7 +332,7 @@ fun SettingsScreen(
                     Text(
                         text = "Show Icon Labels",
                         fontSize = 14.sp,
-                        color = Color.White
+                        color = appearance.onSurface
                     )
 
                     Switch(
@@ -344,27 +341,27 @@ fun SettingsScreen(
                             settingsViewModel.setShowIconLabels(it)
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = activeProfile.primaryAccent
+                            checkedThumbColor = activeProfile.primaryAccent.contrastColor(),
+                            checkedTrackColor = activeProfile.primaryAccent,
+                            uncheckedThumbColor = appearance.onSurfaceVariant,
+                            uncheckedTrackColor = appearance.elevatedSurface,
+                            uncheckedBorderColor = appearance.divider
                         )
                     )
                 }
             }
 
-            // ---------------------------------------------------------
-            // Hardware & Performance
-            // ---------------------------------------------------------
-
             SettingsSectionHeader(
                 title = "Hardware & Performance",
-                icon = Icons.Rounded.Speed
+                icon = Icons.Rounded.Speed,
+                accent = activeProfile.primaryAccent
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF161126))
+                    .clip(sectionShape)
+                    .background(appearance.surface)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -374,10 +371,10 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(itemShape)
                             .background(
                                 if (isSelected) {
-                                    Color(0xFF241B3B)
+                                    activeProfile.primaryAccent.copy(alpha = 0.12f)
                                 } else {
                                     Color.Transparent
                                 }
@@ -402,14 +399,14 @@ fun SettingsScreen(
                                     color = if (isSelected) {
                                         activeProfile.primaryAccent
                                     } else {
-                                        Color.White
+                                        appearance.onSurface
                                     }
                                 )
 
                                 Text(
                                     text = tier.description,
                                     fontSize = 11.sp,
-                                    color = Color(0xFF94A3B8)
+                                    color = appearance.onSurfaceVariant
                                 )
                             }
 
@@ -426,20 +423,17 @@ fun SettingsScreen(
                 }
             }
 
-            // ---------------------------------------------------------
-            // Privacy & Adaptive Intelligence
-            // ---------------------------------------------------------
-
             SettingsSectionHeader(
                 title = "Privacy & Local Intelligence",
-                icon = Icons.Rounded.Security
+                icon = Icons.Rounded.Security,
+                accent = activeProfile.primaryAccent
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF161126))
+                    .clip(sectionShape)
+                    .background(appearance.surface)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -454,13 +448,13 @@ fun SettingsScreen(
                         Text(
                             text = "Local App Usage Tracking",
                             fontSize = 14.sp,
-                            color = Color.White
+                            color = appearance.onSurface
                         )
 
                         Text(
                             text = "100% on-device. Used to sort frequent apps.",
                             fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
+                            color = appearance.onSurfaceVariant
                         )
                     }
 
@@ -470,8 +464,11 @@ fun SettingsScreen(
                             settingsViewModel.setTrackAppUsage(it)
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = activeProfile.primaryAccent
+                            checkedThumbColor = activeProfile.primaryAccent.contrastColor(),
+                            checkedTrackColor = activeProfile.primaryAccent,
+                            uncheckedThumbColor = appearance.onSurfaceVariant,
+                            uncheckedTrackColor = appearance.elevatedSurface,
+                            uncheckedBorderColor = appearance.divider
                         )
                     )
                 }
@@ -487,13 +484,13 @@ fun SettingsScreen(
                         Text(
                             text = "Contextual Suggestions",
                             fontSize = 14.sp,
-                            color = Color.White
+                            color = appearance.onSurface
                         )
 
                         Text(
                             text = "Adapts Now Bar and search suggestions locally.",
                             fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
+                            color = appearance.onSurfaceVariant
                         )
                     }
 
@@ -503,25 +500,21 @@ fun SettingsScreen(
                             settingsViewModel.setContextualSuggestions(it)
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = activeProfile.primaryAccent
+                            checkedThumbColor = activeProfile.primaryAccent.contrastColor(),
+                            checkedTrackColor = activeProfile.primaryAccent,
+                            uncheckedThumbColor = appearance.onSurfaceVariant,
+                            uncheckedTrackColor = appearance.elevatedSurface,
+                            uncheckedBorderColor = appearance.divider
                         )
                     )
                 }
             }
 
-            // ---------------------------------------------------------
-            // Default Launcher
-            // ---------------------------------------------------------
-
             DefaultLauncherCard(
                 context = context,
-                accent = activeProfile.primaryAccent
+                accent = activeProfile.primaryAccent,
+                appearance = appearance
             )
-
-            // ---------------------------------------------------------
-            // About
-            // ---------------------------------------------------------
 
             Column(
                 modifier = Modifier
@@ -533,7 +526,7 @@ fun SettingsScreen(
                     text = "The Purple Launcher v0.1",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = appearance.onSurface
                 )
 
                 Text(
@@ -547,7 +540,7 @@ fun SettingsScreen(
                 Text(
                     text = "No ads • No subscriptions • Enthusiast built",
                     fontSize = 10.sp,
-                    color = Color(0xFF64748B)
+                    color = appearance.onSurfaceVariant
                 )
             }
 
@@ -559,13 +552,16 @@ fun SettingsScreen(
 @Composable
 private fun DefaultLauncherCard(
     context: Context,
-    accent: Color
+    accent: Color,
+    appearance: com.example.core.appearance.LauncherAppearance
 ) {
+    val shape = RoundedCornerShape(appearance.cornerRadius.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color(0xFF161126))
+            .clip(shape)
+            .background(appearance.surface)
             .clickable {
                 openDefaultLauncherSettings(context)
             }
@@ -589,13 +585,13 @@ private fun DefaultLauncherCard(
                     text = "Set Default Launcher",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = appearance.onSurface
                 )
 
                 Text(
                     text = "Open Android default apps settings",
                     fontSize = 11.sp,
-                    color = Color(0xFF94A3B8)
+                    color = appearance.onSurfaceVariant
                 )
             }
         }
@@ -628,7 +624,8 @@ private fun openDefaultLauncherSettings(context: Context) {
 @Composable
 private fun SettingsSectionHeader(
     title: String,
-    icon: ImageVector
+    icon: ImageVector,
+    accent: Color
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -637,7 +634,7 @@ private fun SettingsSectionHeader(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color(0xFFA855F7),
+            tint = accent,
             modifier = Modifier.size(16.dp)
         )
 
@@ -648,7 +645,19 @@ private fun SettingsSectionHeader(
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp,
-            color = Color(0xFFA855F7)
+            color = accent
         )
+    }
+}
+
+private fun Color.contrastColor(): Color {
+    val luminance = (0.299f * red) +
+        (0.587f * green) +
+        (0.114f * blue)
+
+    return if (luminance > 0.55f) {
+        Color.Black
+    } else {
+        Color.White
     }
 }
