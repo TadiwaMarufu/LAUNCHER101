@@ -1,64 +1,36 @@
 package com.example.core.engine
 
 import androidx.compose.animation.core.Spring
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.core.model.LauncherProfile
 
 /**
- * Layout arrangement style for the home screen.
+ * Describes the spatial philosophy of a personality.
  *
- * These represent fundamentally different launcher compositions,
- * not merely different colors.
+ * This does NOT decide what the user puts on the home screen.
  */
 enum class HomeLayoutStyle {
-    FLUID_ORGANIC,
-    PREMIUM_ARCHITECTURAL,
-    CALM_MINIMALIST,
-    FOCUS_DASHBOARD,
-    EXPRESSIVE_AVANT_GARDE
+    FREEFORM,
+    STRUCTURED,
+    MINIMAL,
+    SEARCH_FIRST,
+    EXPERIMENTAL
 }
 
 /**
- * Clock presentation style.
- */
-enum class ClockStyle {
-    FLUID_ROUNDED,
-    PREMIUM_SPLIT,
-    CALM_INLINE,
-    FOCUS_DIGITAL,
-    EXPRESSIVE_MASSIVE
-}
-
-/**
- * Now Bar visual presentation.
- */
-enum class NowBarStyle {
-    FLUID_PILL,
-    PREMIUM_BORDERED,
-    CALM_ZEN,
-    FOCUS_ACTIONABLE,
-    EXPRESSIVE_CAPSULE
-}
-
-/**
- * Information density controls how aggressively the launcher
- * surfaces contextual information.
+ * How strongly the launcher emphasizes information.
  */
 enum class InformationDensity {
     MINIMAL,
     BALANCED,
-    INFORMATIONAL,
-    CONTEXTUAL,
-    EXPERIMENTAL
+    HIGH
 }
 
 /**
  * Motion choreography.
  *
- * This intentionally describes different motion personalities,
- * rather than simply changing animation duration.
+ * These are behavioral differences, not simply animation speeds.
  */
 enum class MotionStyle {
     ORGANIC,
@@ -69,7 +41,18 @@ enum class MotionStyle {
 }
 
 /**
- * How aggressively the Now Bar surfaces contextual information.
+ * Primary navigation philosophy.
+ */
+enum class NavigationStyle {
+    SPATIAL,
+    PRECISE,
+    QUIET,
+    SEARCH_FIRST,
+    EXPLORATORY
+}
+
+/**
+ * How the Now Bar behaves when enabled by the user.
  */
 enum class NowBarBehavior {
     AMBIENT,
@@ -80,50 +63,32 @@ enum class NowBarBehavior {
 }
 
 /**
- * Profile-level behavioral configuration.
+ * Profile defaults.
  *
- * A profile is therefore a launcher personality, not a theme preset.
+ * Important:
+ * These are behavioral defaults only.
+ * They must never force home content into existence.
  */
 data class ProfileConfig(
     val profile: LauncherProfile,
 
-    // Home composition
     val homeLayout: HomeLayoutStyle,
-    val clockStyle: ClockStyle,
-
-    // Now Bar
-    val nowBarStyle: NowBarStyle,
-    val nowBarBehavior: NowBarBehavior,
-
-    // Information and interaction
     val informationDensity: InformationDensity,
     val motionStyle: MotionStyle,
+    val navigationStyle: NavigationStyle,
+    val nowBarBehavior: NowBarBehavior,
 
-    // Visual tokens
-    val cornerRadius: Dp,
-    val cardBackgroundAlpha: Float,
-    val cardBorderWidth: Dp,
-    val cardBorderColor: Color,
+    val defaultGridColumns: Int,
+    val defaultGridRows: Int,
 
-    // Motion parameters
+    val showLabelsByDefault: Boolean,
+
     val springDamping: Float,
     val springStiffness: Float,
 
-    // Home defaults
-    val showAppLabels: Boolean,
-    val iconSize: Dp,
-    val gridColumns: Int,
-    val headerSpacing: Dp,
-    val fontLetterSpacing: Float,
-    val wallpaperBlurRadius: Dp
+    val defaultQualityTier: com.example.core.model.QualityTier
 )
 
-/**
- * Central personality engine.
- *
- * Keep profile-specific decisions here rather than scattering
- * `if (profile == ...)` throughout the UI and feature modules.
- */
 object ProfileEngine {
 
     fun getConfig(profile: LauncherProfile): ProfileConfig {
@@ -131,142 +96,77 @@ object ProfileEngine {
 
             LauncherProfile.FLUID -> ProfileConfig(
                 profile = profile,
-
-                homeLayout = HomeLayoutStyle.FLUID_ORGANIC,
-                clockStyle = ClockStyle.FLUID_ROUNDED,
-
-                nowBarStyle = NowBarStyle.FLUID_PILL,
-                nowBarBehavior = NowBarBehavior.AMBIENT,
-
-                informationDensity = InformationDensity.CONTEXTUAL,
+                homeLayout = HomeLayoutStyle.FREEFORM,
+                informationDensity = InformationDensity.BALANCED,
                 motionStyle = MotionStyle.ORGANIC,
-
-                cornerRadius = 28.dp,
-                cardBackgroundAlpha = 0.65f,
-                cardBorderWidth = 1.dp,
-                cardBorderColor = Color(0x33A855F7),
-
+                navigationStyle = NavigationStyle.SPATIAL,
+                nowBarBehavior = NowBarBehavior.AMBIENT,
+                defaultGridColumns = 5,
+                defaultGridRows = 10,
+                showLabelsByDefault = true,
                 springDamping = Spring.DampingRatioMediumBouncy,
                 springStiffness = Spring.StiffnessLow,
-
-                showAppLabels = true,
-                iconSize = 56.dp,
-                gridColumns = 4,
-                headerSpacing = 24.dp,
-                fontLetterSpacing = 0.02f,
-                wallpaperBlurRadius = 16.dp
+                defaultQualityTier = com.example.core.model.QualityTier.MEDIUM
             )
 
             LauncherProfile.PREMIUM -> ProfileConfig(
                 profile = profile,
-
-                homeLayout = HomeLayoutStyle.PREMIUM_ARCHITECTURAL,
-                clockStyle = ClockStyle.PREMIUM_SPLIT,
-
-                nowBarStyle = NowBarStyle.PREMIUM_BORDERED,
-                nowBarBehavior = NowBarBehavior.CURATED,
-
+                homeLayout = HomeLayoutStyle.STRUCTURED,
                 informationDensity = InformationDensity.BALANCED,
                 motionStyle = MotionStyle.REFINED,
-
-                cornerRadius = 20.dp,
-                cardBackgroundAlpha = 0.85f,
-                cardBorderWidth = 1.5.dp,
-                cardBorderColor = Color(0x40E2E8F0),
-
+                navigationStyle = NavigationStyle.PRECISE,
+                nowBarBehavior = NowBarBehavior.CURATED,
+                defaultGridColumns = 5,
+                defaultGridRows = 10,
+                showLabelsByDefault = true,
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMedium,
-
-                showAppLabels = true,
-                iconSize = 52.dp,
-                gridColumns = 4,
-                headerSpacing = 32.dp,
-                fontLetterSpacing = 0.08f,
-                wallpaperBlurRadius = 8.dp
+                defaultQualityTier = com.example.core.model.QualityTier.HIGH
             )
 
             LauncherProfile.CALM -> ProfileConfig(
                 profile = profile,
-
-                homeLayout = HomeLayoutStyle.CALM_MINIMALIST,
-                clockStyle = ClockStyle.CALM_INLINE,
-
-                nowBarStyle = NowBarStyle.CALM_ZEN,
-                nowBarBehavior = NowBarBehavior.QUIET,
-
+                homeLayout = HomeLayoutStyle.MINIMAL,
                 informationDensity = InformationDensity.MINIMAL,
                 motionStyle = MotionStyle.RESTRAINED,
-
-                cornerRadius = 16.dp,
-                cardBackgroundAlpha = 0.35f,
-                cardBorderWidth = 0.5.dp,
-                cardBorderColor = Color(0x20FFFFFF),
-
+                navigationStyle = NavigationStyle.QUIET,
+                nowBarBehavior = NowBarBehavior.QUIET,
+                defaultGridColumns = 5,
+                defaultGridRows = 10,
+                showLabelsByDefault = false,
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMediumLow,
-
-                showAppLabels = false,
-                iconSize = 48.dp,
-                gridColumns = 4,
-                headerSpacing = 48.dp,
-                fontLetterSpacing = 0.04f,
-                wallpaperBlurRadius = 0.dp
+                defaultQualityTier = com.example.core.model.QualityTier.LOW
             )
 
             LauncherProfile.FOCUS -> ProfileConfig(
                 profile = profile,
-
-                homeLayout = HomeLayoutStyle.FOCUS_DASHBOARD,
-                clockStyle = ClockStyle.FOCUS_DIGITAL,
-
-                nowBarStyle = NowBarStyle.FOCUS_ACTIONABLE,
-                nowBarBehavior = NowBarBehavior.ACTION_FIRST,
-
-                informationDensity = InformationDensity.INFORMATIONAL,
+                homeLayout = HomeLayoutStyle.SEARCH_FIRST,
+                informationDensity = InformationDensity.HIGH,
                 motionStyle = MotionStyle.RESPONSIVE,
-
-                cornerRadius = 14.dp,
-                cardBackgroundAlpha = 0.90f,
-                cardBorderWidth = 1.dp,
-                cardBorderColor = Color(0x309333EA),
-
+                navigationStyle = NavigationStyle.SEARCH_FIRST,
+                nowBarBehavior = NowBarBehavior.ACTION_FIRST,
+                defaultGridColumns = 5,
+                defaultGridRows = 10,
+                showLabelsByDefault = true,
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessHigh,
-
-                showAppLabels = true,
-                iconSize = 50.dp,
-                gridColumns = 4,
-                headerSpacing = 16.dp,
-                fontLetterSpacing = 0.01f,
-                wallpaperBlurRadius = 4.dp
+                defaultQualityTier = com.example.core.model.QualityTier.MEDIUM
             )
 
             LauncherProfile.EXPRESSIVE -> ProfileConfig(
                 profile = profile,
-
-                homeLayout = HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE,
-                clockStyle = ClockStyle.EXPRESSIVE_MASSIVE,
-
-                nowBarStyle = NowBarStyle.EXPRESSIVE_CAPSULE,
-                nowBarBehavior = NowBarBehavior.EXPERIMENTAL,
-
-                informationDensity = InformationDensity.EXPERIMENTAL,
+                homeLayout = HomeLayoutStyle.EXPERIMENTAL,
+                informationDensity = InformationDensity.BALANCED,
                 motionStyle = MotionStyle.PLAYFUL,
-
-                cornerRadius = 36.dp,
-                cardBackgroundAlpha = 0.75f,
-                cardBorderWidth = 2.dp,
-                cardBorderColor = Color(0x50D946EF),
-
+                navigationStyle = NavigationStyle.EXPLORATORY,
+                nowBarBehavior = NowBarBehavior.EXPERIMENTAL,
+                defaultGridColumns = 5,
+                defaultGridRows = 10,
+                showLabelsByDefault = true,
                 springDamping = Spring.DampingRatioHighBouncy,
                 springStiffness = Spring.StiffnessLow,
-
-                showAppLabels = true,
-                iconSize = 60.dp,
-                gridColumns = 4,
-                headerSpacing = 28.dp,
-                fontLetterSpacing = -0.02f,
-                wallpaperBlurRadius = 24.dp
+                defaultQualityTier = com.example.core.model.QualityTier.HIGH
             )
         }
     }
