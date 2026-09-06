@@ -1,0 +1,7 @@
+{
+  "name": "The Purple Launcher",
+  "description": "Android, in your own frequency. An enthusiast launcher with five distinct personalities, horizontal category app drawer, adaptive Now Bar, and native widgets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
