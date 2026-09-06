@@ -8,6 +8,7 @@ import com.example.core.data.repository.GestureRepository
 import com.example.core.data.repository.IntelligenceRepository
 import com.example.core.data.repository.LauncherContentRepository
 import com.example.core.data.repository.LauncherStateRepository
+import com.example.core.data.repository.HomeLayoutRepository
 import com.example.core.data.repository.ProfileRepository
 import com.example.core.data.store.LauncherDataStore
 import com.example.core.widgets.WidgetManager
@@ -36,6 +37,9 @@ class LauncherDependencies private constructor(context: Context) {
 
     val launcherContentRepository =
         LauncherContentRepository(dataStore)
+
+    val homeLayoutRepository =
+        HomeLayoutRepository(dataStore)
 
     val appUsageRepository =
         AppUsageRepository(dataStore)

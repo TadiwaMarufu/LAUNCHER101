@@ -134,6 +134,13 @@ class LauncherDataStore(
             )
         }
 
+    val homeItems: Flow<List<com.example.core.model.HomeItem>> =
+        dataStore.data.safePreferences().map { preferences ->
+            decodeHomeItems(
+                preferences[Keys.homeItems]
+            )
+        }
+
     suspend fun setActiveProfile(profile: LauncherProfile) {
         dataStore.edit { preferences ->
             preferences[Keys.activeProfile] = profile.name
@@ -224,6 +231,48 @@ class LauncherDataStore(
         }
     }
 
+    suspend fun setHomeItems(
+        items: List<com.example.core.model.HomeItem>
+    ) {
+        val array = org.json.JSONArray()
+
+        items.forEach { item ->
+            array.put(
+                org.json.JSONObject().apply {
+                    put("id", item.id)
+                    put("type", item.type.name)
+                    put("page", item.page)
+                    put("x", item.x)
+                    put("y", item.y)
+                    put("width", item.width)
+                    put("height", item.height)
+
+                    item.packageName?.let {
+                        put("packageName", it)
+                    }
+
+                    item.activityName?.let {
+                        put("activityName", it)
+                    }
+
+                    item.appWidgetId?.let {
+                        put("appWidgetId", it)
+                    }
+
+                    item.title?.let {
+                        put("title", it)
+                    }
+
+                    put("visible", item.visible)
+                }
+            )
+        }
+
+        dataStore.edit { preferences ->
+            preferences[Keys.homeItems] = array.toString()
+        }
+    }
+
     suspend fun setWidgetPlacements(
         widgets: List<com.example.core.widgets.PlacedWidget>
     ) {
@@ -304,6 +353,82 @@ class LauncherDataStore(
             }
         }
 
+    private fun decodeHomeItems(
+        json: String?
+    ): List<com.example.core.model.HomeItem> {
+        if (json.isNullOrBlank()) {
+            return emptyList()
+        }
+
+        return try {
+            val array = org.json.JSONArray(json)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val objectValue = array.optJSONObject(index)
+                        ?: continue
+
+                    val typeName =
+                        objectValue.optString("type")
+
+                    val type =
+                        try {
+                            com.example.core.model.HomeItemType.valueOf(
+                                typeName
+                            )
+                        } catch (_: IllegalArgumentException) {
+                            continue
+                        }
+
+                    add(
+                        com.example.core.model.HomeItem(
+                            id = objectValue.optString("id"),
+                            type = type,
+                            page = objectValue.optInt("page", 0),
+                            x = objectValue.optInt("x", 0),
+                            y = objectValue.optInt("y", 0),
+                            width = objectValue.optInt("width", 1),
+                            height = objectValue.optInt("height", 1),
+                            packageName =
+                                objectValue.optString(
+                                    "packageName",
+                                    null
+                                ),
+                            activityName =
+                                objectValue.optString(
+                                    "activityName",
+                                    null
+                                ),
+                            appWidgetId =
+                                if (
+                                    objectValue.has(
+                                        "appWidgetId"
+                                    )
+                                ) {
+                                    objectValue.optInt(
+                                        "appWidgetId"
+                                    )
+                                } else {
+                                    null
+                                },
+                            title =
+                                objectValue.optString(
+                                    "title",
+                                    null
+                                ),
+                            visible =
+                                objectValue.optBoolean(
+                                    "visible",
+                                    true
+                                )
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     private inline fun <reified T : Enum<T>> String?.toEnumOrDefault(
         default: T
     ): T {
@@ -348,6 +473,12 @@ class LauncherDataStore(
 
         val widgetPlacements =
             stringPreferencesKey("widget_placements")
+
+        val homeItems =
+            stringPreferencesKey("home_items")
+
+        val homeInitialized =
+            booleanPreferencesKey("home_initialized")
     }
 
     companion object {
