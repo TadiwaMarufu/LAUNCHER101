@@ -100,9 +100,6 @@ data class ProfileConfig(
 
     // Visual tokens
     val cornerRadius: Dp,
-    val cardBackgroundAlpha: Float,
-    val cardBorderWidth: Dp,
-    val cardBorderColor: Color,
 
     // Motion parameters
     val springDamping: Float,
@@ -113,8 +110,6 @@ data class ProfileConfig(
     val iconSize: Dp,
     val gridColumns: Int,
     val headerSpacing: Dp,
-    val fontLetterSpacing: Float,
-    val wallpaperBlurRadius: Dp
 )
 
 /**
