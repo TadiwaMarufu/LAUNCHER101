@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,6 +63,7 @@ import com.example.ui.widgets.MediaWidgetCard
 import com.example.ui.widgets.PersonalityClockWidget
 import com.example.ui.widgets.SystemTelemetryCard
 import com.example.ui.widgets.WeatherCard
+import com.example.core.widgets.AndroidAppWidgetHostView
 
 enum class LauncherOverlayState {
     NONE,
@@ -74,12 +76,22 @@ enum class LauncherOverlayState {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddWidget: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
     val dependencies = remember {
         LauncherDependencies.get(context)
+    }
+
+    val widgetManager =
+        dependencies.widgetManager
+
+    val placedWidgets by widgetManager
+        .placedWidgets
+        .collectAsState(initial = emptyList())
+
     }
 
     val homeViewModel: HomeViewModel = viewModel(
@@ -274,6 +286,102 @@ fun HomeScreen(
                             )
                         }
                     }
+
+                    /*
+                     * Real Android App Widgets.
+                     *
+                     * Native Purple widgets remain profile-driven cards above.
+                     * These are actual AppWidgetHost views supplied by installed
+                     * Android applications.
+                     */
+                    if (placedWidgets.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement =
+                                Arrangement.spacedBy(12.dp)
+                        ) {
+                            placedWidgets
+                                .sortedBy { it.position }
+                                .forEach { widget ->
+                                    val hostView =
+                                        remember(widget.appWidgetId) {
+                                            widgetManager.createHostView(
+                                                context,
+                                                widget.appWidgetId
+                                            )
+                                        }
+
+                                    if (hostView != null) {
+                                        Surface(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .height(
+                                                        (widget.rowSpan * 140)
+                                                            .coerceAtLeast(100)
+                                                            .dp
+                                                    )
+                                                    .pointerInput(
+                                                        widget.appWidgetId
+                                                    ) {
+                                                        detectTapGestures(
+                                                            onLongPress = {
+                                                                // Remove through the
+                                                                // launcher-owned
+                                                                // persistence boundary.
+                                                                homeViewModel.removeWidget(
+                                                                    widget.appWidgetId
+                                                                )
+                                                            }
+                                                        )
+                                                    },
+                                            tonalElevation = 1.dp
+                                        ) {
+                                            AndroidAppWidgetHostView(
+                                                appWidgetHost =
+                                                    widgetManager.host,
+                                                appWidgetManager =
+                                                    widgetManager.appWidgetManager,
+                                                appWidgetId =
+                                                    widget.appWidgetId,
+                                                modifier =
+                                                    Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+                                }
+                        }
+
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.End
+                    ) {
+                        Text(
+                            text = "+ Widget",
+                            modifier =
+                                Modifier
+                                    .clickable(
+                                        onClick = onAddWidget
+                                    )
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 8.dp
+                                    ),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.82f)
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(4.dp)
+                    )
 
                     val homeAppLimit =
                         if (

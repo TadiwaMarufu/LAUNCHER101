@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -127,6 +126,13 @@ class LauncherDataStore(
             preferences[Keys.appUsageJson]
         }
 
+    val widgetPlacements: Flow<List<com.example.core.widgets.PlacedWidget>> =
+        dataStore.data.safePreferences().map { preferences ->
+            decodeWidgetPlacements(
+                preferences[Keys.widgetPlacements]
+            )
+        }
+
     suspend fun setActiveProfile(profile: LauncherProfile) {
         dataStore.edit { preferences ->
             preferences[Keys.activeProfile] = profile.name
@@ -217,9 +223,74 @@ class LauncherDataStore(
         }
     }
 
+    suspend fun setWidgetPlacements(
+        widgets: List<com.example.core.widgets.PlacedWidget>
+    ) {
+        val array = org.json.JSONArray()
+
+        widgets.forEach { widget ->
+            array.put(
+                org.json.JSONObject().apply {
+                    put("id", widget.id)
+                    put("appWidgetId", widget.appWidgetId)
+                    put("providerPackage", widget.providerPackage)
+                    put("providerClass", widget.providerClass)
+                    put("label", widget.label)
+                    put("position", widget.position)
+                    put("colSpan", widget.colSpan)
+                    put("rowSpan", widget.rowSpan)
+                }
+            )
+        }
+
+        dataStore.edit { preferences ->
+            preferences[Keys.widgetPlacements] =
+                array.toString()
+        }
+    }
+
     suspend fun clearAll() {
         dataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+
+    private fun decodeWidgetPlacements(
+        raw: String?
+    ): List<com.example.core.widgets.PlacedWidget> {
+        val json = raw
+            ?: return emptyList()
+
+        return try {
+            val array = org.json.JSONArray(json)
+
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.getJSONObject(index)
+
+                    add(
+                        com.example.core.widgets.PlacedWidget(
+                            id = item.getString("id"),
+                            appWidgetId =
+                                item.getInt("appWidgetId"),
+                            providerPackage =
+                                item.getString("providerPackage"),
+                            providerClass =
+                                item.getString("providerClass"),
+                            label =
+                                item.getString("label"),
+                            position =
+                                item.optInt("position", 0),
+                            colSpan =
+                                item.optInt("colSpan", 2),
+                            rowSpan =
+                                item.optInt("rowSpan", 1)
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 
@@ -273,6 +344,9 @@ class LauncherDataStore(
 
         val appUsageJson =
             stringPreferencesKey("app_usage_json")
+
+        val widgetPlacements =
+            stringPreferencesKey("widget_placements")
     }
 
     companion object {

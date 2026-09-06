@@ -10,18 +10,14 @@ import com.example.core.data.repository.LauncherContentRepository
 import com.example.core.data.repository.LauncherStateRepository
 import com.example.core.data.repository.ProfileRepository
 import com.example.core.data.store.LauncherDataStore
+import com.example.core.widgets.WidgetManager
 
 class LauncherDependencies private constructor(context: Context) {
 
     private val appContext = context.applicationContext
 
-    /**
-     * Single persistent data source for the entire launcher.
-     *
-     * Every repository and manager must use this instance.
-     * This prevents multiple DataStore graphs from being created.
-     */
-    val dataStore = LauncherDataStore(appContext)
+    val dataStore =
+        LauncherDataStore(appContext)
 
     val profileRepository =
         ProfileRepository(dataStore)
@@ -47,19 +43,39 @@ class LauncherDependencies private constructor(context: Context) {
     val appManager =
         AppManager.getInstance(
             context = appContext,
-            contentRepository = launcherContentRepository,
-            intelligenceRepository = intelligenceRepository,
-            usageRepository = appUsageRepository
+            contentRepository =
+                launcherContentRepository,
+            intelligenceRepository =
+                intelligenceRepository,
+            usageRepository =
+                appUsageRepository
+        )
+
+    /**
+     * Single real Android App Widget host.
+     *
+     * The same manager is shared by Activity/Home so widget IDs,
+     * persistence and lifecycle all belong to one launcher graph.
+     */
+    val widgetManager =
+        WidgetManager(
+            context = appContext,
+            dataStore = dataStore
         )
 
     companion object {
 
         @Volatile
-        private var instance: LauncherDependencies? = null
+        private var instance:
+            LauncherDependencies? = null
 
-        fun get(context: Context): LauncherDependencies {
+        fun get(
+            context: Context
+        ): LauncherDependencies {
+
             return instance
                 ?: synchronized(this) {
+
                     instance
                         ?: LauncherDependencies(
                             context.applicationContext

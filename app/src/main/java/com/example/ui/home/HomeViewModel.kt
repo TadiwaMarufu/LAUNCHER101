@@ -128,6 +128,13 @@ class HomeViewModel(
         appManager.launchApp(context, app)
     }
 
+    fun removeWidget(appWidgetId: Int) {
+        viewModelScope.launch {
+            dependencies.widgetManager
+                .removeWidget(appWidgetId)
+        }
+    }
+
     fun refreshApps() {
         appManager.loadInstalledApps()
     }
