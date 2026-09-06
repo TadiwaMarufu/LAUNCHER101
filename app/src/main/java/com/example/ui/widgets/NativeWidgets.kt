@@ -56,6 +56,7 @@ import com.example.core.model.BatteryInfoState
 import com.example.core.model.LauncherProfile
 import com.example.core.model.LauncherTask
 import com.example.core.model.MediaPlaybackState
+import com.example.ui.theme.LocalLauncherAppearance
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,6 +71,7 @@ fun PersonalityClockWidget(
     modifier: Modifier = Modifier,
     onClockClick: () -> Unit = {}
 ) {
+    val appearance = LocalLauncherAppearance.current
     var currentTime by remember { mutableStateOf(Date()) }
 
     LaunchedEffect(Unit) {
@@ -94,8 +96,8 @@ fun PersonalityClockWidget(
                 modifier = modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(config.cornerRadius))
-                    .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-                    .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+                    .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+                    .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
                     .clickable { onClockClick() }
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
@@ -109,7 +111,7 @@ fun PersonalityClockWidget(
                             text = timeFormat.format(currentTime),
                             fontSize = 44.sp,
                             fontWeight = FontWeight.Bold,
-                            color = profile.textPrimary,
+                            color = appearance.onSurface,
                             letterSpacing = (-1).sp
                         )
                         Spacer(modifier = Modifier.height(2.dp))
@@ -117,7 +119,7 @@ fun PersonalityClockWidget(
                             text = dateFormat.format(currentTime),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = profile.textSecondary
+                            color = appearance.onSurfaceVariant
                         )
                     }
 
@@ -126,21 +128,21 @@ fun PersonalityClockWidget(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(profile.primaryAccent.copy(alpha = 0.18f))
+                            .background(appearance.primary.copy(alpha = 0.18f))
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(profile.primaryAccent)
+                                .background(appearance.primary)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "24°C Clear",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = profile.primaryAccent
+                            color = appearance.primary
                         )
                     }
                 }
@@ -160,7 +162,7 @@ fun PersonalityClockWidget(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(profile.primaryAccent)
+                            .background(appearance.primary)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -168,7 +170,7 @@ fun PersonalityClockWidget(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
-                        color = profile.textSecondary
+                        color = appearance.onSurfaceVariant
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
@@ -178,14 +180,14 @@ fun PersonalityClockWidget(
                         fontSize = 72.sp,
                         fontWeight = FontWeight.ExtraBold,
                         fontFamily = FontFamily.SansSerif,
-                        color = profile.textPrimary,
+                        color = appearance.onSurface,
                         letterSpacing = (-3).sp
                     )
                     Text(
                         text = ":",
                         fontSize = 64.sp,
                         fontWeight = FontWeight.Light,
-                        color = profile.primaryAccent.copy(alpha = 0.8f),
+                        color = appearance.primary.copy(alpha = 0.8f),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
                     )
                     Text(
@@ -193,7 +195,7 @@ fun PersonalityClockWidget(
                         fontSize = 72.sp,
                         fontWeight = FontWeight.Light,
                         fontFamily = FontFamily.SansSerif,
-                        color = profile.textPrimary.copy(alpha = 0.85f),
+                        color = appearance.onSurface.copy(alpha = 0.85f),
                         letterSpacing = (-3).sp
                     )
                 }
@@ -212,7 +214,7 @@ fun PersonalityClockWidget(
                     text = timeFormat.format(currentTime),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Light,
-                    color = profile.textPrimary,
+                    color = appearance.onSurface,
                     letterSpacing = 1.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
@@ -220,7 +222,7 @@ fun PersonalityClockWidget(
                     text = shortDateFormat.format(currentTime).lowercase(Locale.getDefault()),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    color = profile.textSecondary
+                    color = appearance.onSurfaceVariant
                 )
             }
         }
@@ -231,8 +233,8 @@ fun PersonalityClockWidget(
                 modifier = modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(config.cornerRadius))
-                    .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-                    .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+                    .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+                    .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
                     .clickable { onClockClick() }
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -244,13 +246,13 @@ fun PersonalityClockWidget(
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
-                        color = profile.textPrimary
+                        color = appearance.onSurface
                     )
                     Text(
                         text = shortDateFormat.format(currentTime),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = profile.textSecondary
+                        color = appearance.onSurfaceVariant
                     )
                 }
 
@@ -263,13 +265,13 @@ fun PersonalityClockWidget(
                             text = "FOCUS MODE",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = profile.primaryAccent,
+                            color = appearance.primary,
                             letterSpacing = 1.sp
                         )
                         Text(
                             text = "3 Tasks Due",
                             fontSize = 12.sp,
-                            color = profile.textSecondary
+                            color = appearance.onSurfaceVariant
                         )
                     }
                 }
@@ -289,21 +291,21 @@ fun PersonalityClockWidget(
                     fontSize = 88.sp,
                     fontWeight = FontWeight.Black,
                     lineHeight = 76.sp,
-                    color = profile.primaryAccent
+                    color = appearance.primary
                 )
                 Text(
                     text = minuteFormat.format(currentTime),
                     fontSize = 88.sp,
                     fontWeight = FontWeight.Light,
                     lineHeight = 76.sp,
-                    color = profile.textPrimary
+                    color = appearance.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "• ${dateFormat.format(currentTime)}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = profile.secondaryAccent
+                    color = appearance.secondary
                 )
             }
         }
@@ -322,12 +324,13 @@ fun MediaWidgetCard(
     onNext: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(config.cornerRadius))
-            .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-            .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+            .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(16.dp)
     ) {
         Column {
@@ -344,13 +347,13 @@ fun MediaWidgetCard(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(profile.primaryAccent.copy(alpha = 0.25f)),
+                            .background(appearance.primary.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.GraphicEq,
                             contentDescription = "Media Cover",
-                            tint = profile.primaryAccent,
+                            tint = appearance.primary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -362,14 +365,14 @@ fun MediaWidgetCard(
                             text = mediaState.title,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = profile.textPrimary,
+                            color = appearance.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = mediaState.artist,
                             fontSize = 12.sp,
-                            color = profile.textSecondary,
+                            color = appearance.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -382,12 +385,12 @@ fun MediaWidgetCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(profile.primaryAccent)
+                            .background(appearance.primary)
                     ) {
                         Icon(
                             imageVector = if (mediaState.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                             contentDescription = if (mediaState.isPlaying) "Pause" else "Play",
-                            tint = Color.White,
+                            tint = appearance.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -401,7 +404,7 @@ fun MediaWidgetCard(
                         Icon(
                             imageVector = Icons.Rounded.SkipNext,
                             contentDescription = "Next Track",
-                            tint = profile.textPrimary
+                            tint = appearance.onSurface
                         )
                     }
                 }
@@ -415,8 +418,8 @@ fun MediaWidgetCard(
                     .fillMaxWidth()
                     .height(3.dp)
                     .clip(RoundedCornerShape(2.dp)),
-                color = profile.primaryAccent,
-                trackColor = profile.textSecondary.copy(alpha = 0.2f)
+                color = appearance.primary,
+                trackColor = appearance.onSurfaceVariant.copy(alpha = 0.2f)
             )
         }
     }
@@ -434,6 +437,7 @@ fun FocusTasksWidgetCard(
     onAddTask: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     var isAddingTask by remember { mutableStateOf(false) }
     var newTaskText by remember { mutableStateOf("") }
 
@@ -441,8 +445,8 @@ fun FocusTasksWidgetCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(config.cornerRadius))
-            .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-            .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+            .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(16.dp)
     ) {
         Column {
@@ -456,7 +460,7 @@ fun FocusTasksWidgetCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = profile.primaryAccent
+                    color = appearance.primary
                 )
 
                 IconButton(
@@ -466,7 +470,7 @@ fun FocusTasksWidgetCard(
                     Icon(
                         imageVector = Icons.Rounded.Add,
                         contentDescription = "Add Task",
-                        tint = profile.primaryAccent
+                        tint = appearance.primary
                     )
                 }
             }
@@ -481,13 +485,13 @@ fun FocusTasksWidgetCard(
                     TextField(
                         value = newTaskText,
                         onValueChange = { newTaskText = it },
-                        placeholder = { Text("Enter task...", color = profile.textSecondary) },
+                        placeholder = { Text("Enter task...", color = appearance.onSurfaceVariant) },
                         modifier = Modifier.weight(1f),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = profile.textPrimary,
-                            unfocusedTextColor = profile.textPrimary
+                            focusedTextColor = appearance.onSurface,
+                            unfocusedTextColor = appearance.onSurface
                         ),
                         singleLine = true
                     )
@@ -503,7 +507,7 @@ fun FocusTasksWidgetCard(
                         Icon(
                             imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = "Submit",
-                            tint = profile.primaryAccent
+                            tint = appearance.primary
                         )
                     }
                 }
@@ -517,7 +521,7 @@ fun FocusTasksWidgetCard(
                     Text(
                         text = "All tasks completed. Deep focus achieved.",
                         fontSize = 12.sp,
-                        color = profile.textSecondary,
+                        color = appearance.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 } else {
@@ -533,14 +537,14 @@ fun FocusTasksWidgetCard(
                             Icon(
                                 imageVector = if (task.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                 contentDescription = if (task.isCompleted) "Completed" else "Incomplete",
-                                tint = if (task.isCompleted) profile.primaryAccent else profile.textSecondary,
+                                tint = if (task.isCompleted) appearance.primary else appearance.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = task.text,
                                 fontSize = 13.sp,
-                                color = if (task.isCompleted) profile.textSecondary else profile.textPrimary,
+                                color = if (task.isCompleted) appearance.onSurfaceVariant else appearance.onSurface,
                                 textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -565,8 +569,8 @@ fun WeatherCard(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
-            .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-            .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+            .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -582,12 +586,12 @@ fun WeatherCard(
                 text = "24°C",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = profile.textPrimary
+                color = appearance.onSurface
             )
             Text(
                 text = "Sunny • Calm Breeze",
                 fontSize = 11.sp,
-                color = profile.textSecondary
+                color = appearance.onSurfaceVariant
             )
         }
     }
@@ -606,15 +610,15 @@ fun SystemTelemetryCard(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
-            .background(profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha))
-            .border(config.cardBorderWidth, config.cardBorderColor, RoundedCornerShape(config.cornerRadius))
+            .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
+            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = if (battery.isCharging) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryStd,
             contentDescription = "Battery",
-            tint = profile.primaryAccent,
+            tint = appearance.primary,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -623,12 +627,12 @@ fun SystemTelemetryCard(
                 text = "${battery.percentage}%",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = profile.textPrimary
+                color = appearance.onSurface
             )
             Text(
                 text = if (battery.isCharging) "Charging" else "Healthy",
                 fontSize = 10.sp,
-                color = profile.textSecondary
+                color = appearance.onSurfaceVariant
             )
         }
     }

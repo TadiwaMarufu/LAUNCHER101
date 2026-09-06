@@ -59,6 +59,7 @@ import com.example.core.model.AppCategory
 import com.example.core.model.AppItem
 import com.example.core.model.IconShape
 import com.example.core.model.LauncherProfile
+import com.example.ui.theme.LocalLauncherAppearance
 import java.util.Locale
 
 @Composable
@@ -81,7 +82,7 @@ fun AppIconImage(
         modifier = modifier
             .size(size)
             .clip(shapeModifier)
-            .background(Color(0xFF1F1A2C)),
+            .background(appearance.surface),
         contentAlignment = Alignment.Center
     ) {
         if (drawable != null) {
@@ -119,6 +120,7 @@ fun AppDrawerView(
     onCloseDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(AppCategory.ALL) }
 
@@ -138,7 +140,7 @@ fun AppDrawerView(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(profile.backgroundBase.copy(alpha = 0.98f))
+            .background(appearance.background.copy(alpha = 0.98f))
             .padding(top = 16.dp, bottom = 8.dp)
     ) {
         // Top Bar: Search input and Close button
@@ -152,8 +154,8 @@ fun AppDrawerView(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(profile.surfaceBase)
-                    .border(1.dp, config.cardBorderColor, RoundedCornerShape(24.dp))
+                    .background(appearance.surface)
+                    .border(1.dp, appearance.divider, RoundedCornerShape(24.dp))
                     .padding(horizontal = 12.dp, vertical = 2.dp)
             ) {
                 Row(
@@ -162,7 +164,7 @@ fun AppDrawerView(
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = "Search",
-                        tint = profile.textSecondary,
+                        tint = appearance.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -173,15 +175,15 @@ fun AppDrawerView(
                             Text(
                                 text = "Search ${allApps.size} apps...",
                                 fontSize = 14.sp,
-                                color = profile.textSecondary
+                                color = appearance.onSurfaceVariant
                             )
                         },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = profile.textPrimary,
-                            unfocusedTextColor = profile.textPrimary,
-                            cursorColor = profile.primaryAccent,
+                            focusedTextColor = appearance.onSurface,
+                            unfocusedTextColor = appearance.onSurface,
+                            cursorColor = appearance.primary,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -196,7 +198,7 @@ fun AppDrawerView(
                             Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = "Clear",
-                                tint = profile.textSecondary,
+                                tint = appearance.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -211,12 +213,12 @@ fun AppDrawerView(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(profile.surfaceBase)
+                    .background(appearance.surface)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "Close Drawer",
-                    tint = profile.textPrimary
+                    tint = appearance.onSurface
                 )
             }
         }
@@ -235,8 +237,8 @@ fun AppDrawerView(
                 val isSelected = category == selectedCategory && searchQuery.isBlank()
                 val count = categorizedApps[category]?.size ?: 0
 
-                val categoryBg = if (isSelected) profile.primaryAccent else profile.surfaceBase
-                val categoryText = if (isSelected) Color.White else profile.textSecondary
+                val categoryBg = if (isSelected) appearance.primary else appearance.surface
+                val categoryText = if (isSelected) appearance.onSurface else appearance.onSurfaceVariant
 
                 Row(
                     modifier = Modifier
@@ -261,7 +263,7 @@ fun AppDrawerView(
                             text = "$count",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else profile.primaryAccent
+                            color = if (isSelected) appearance.onSurface.copy(alpha = 0.8f) else appearance.primary
                         )
                     }
                 }
@@ -287,7 +289,7 @@ fun AppDrawerView(
                 if (recentlyLaunched.isNotEmpty()) {
                     Text(
                         text = "Recent",
-                        color = profile.textPrimary,
+                        color = appearance.onSurface,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -315,14 +317,14 @@ fun AppDrawerView(
                                     label = app.label,
                                     iconShape = iconShape,
                                     size = 48.dp,
-                                    accentColor = profile.primaryAccent
+                                    accentColor = appearance.primary
                                 )
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
                                     text = app.label,
-                                    color = profile.textSecondary,
+                                    color = appearance.onSurfaceVariant,
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -340,7 +342,7 @@ fun AppDrawerView(
                 if (frequentlyLaunched.isNotEmpty()) {
                     Text(
                         text = "Frequent",
-                        color = profile.textPrimary,
+                        color = appearance.onSurface,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -368,14 +370,14 @@ fun AppDrawerView(
                                     label = app.label,
                                     iconShape = iconShape,
                                     size = 48.dp,
-                                    accentColor = profile.primaryAccent
+                                    accentColor = appearance.primary
                                 )
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
                                     text = app.label,
-                                    color = profile.textSecondary,
+                                    color = appearance.onSurfaceVariant,
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -400,7 +402,7 @@ fun AppDrawerView(
             ) {
                 Text(
                     text = if (searchQuery.isNotBlank()) "No apps found for \"$searchQuery\"" else "No apps in this category",
-                    color = profile.textSecondary,
+                    color = appearance.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -429,7 +431,7 @@ fun AppDrawerView(
                                 label = app.label,
                                 iconShape = iconShape,
                                 size = config.iconSize,
-                                accentColor = profile.primaryAccent
+                                accentColor = appearance.primary
                             )
                             if (app.isPinned) {
                                 Box(
@@ -437,13 +439,13 @@ fun AppDrawerView(
                                         .align(Alignment.TopEnd)
                                         .size(16.dp)
                                         .clip(CircleShape)
-                                        .background(profile.primaryAccent),
+                                        .background(appearance.primary),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.PushPin,
                                         contentDescription = "Pinned",
-                                        tint = Color.White,
+                                        tint = appearance.onSurface,
                                         modifier = Modifier.size(10.dp)
                                     )
                                 }
@@ -456,7 +458,7 @@ fun AppDrawerView(
                                 text = app.label,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Normal,
-                                color = profile.textPrimary,
+                                color = appearance.onSurface,
                                 textAlign = TextAlign.Center,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,

@@ -46,6 +46,7 @@ import com.example.core.nowbar.NowBarController
 import com.example.core.widgets.AndroidAppWidgetHostView
 import com.example.ui.drawer.AppIconImage
 import com.example.ui.nowbar.NowBarView
+import com.example.ui.theme.LocalLauncherAppearance
 import com.example.ui.widgets.PersonalityClockWidget
 import kotlin.math.roundToInt
 
@@ -74,6 +75,7 @@ fun HomeCanvas(
     onDrawerClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
+    val appearance = LocalLauncherAppearance.current
     val context = LocalContext.current
 
     val dependencies = remember(context) {
@@ -163,7 +165,7 @@ fun HomeCanvas(
                     .then(
                         if (editMode) {
                             Modifier.background(
-                                profile.primaryAccent.copy(alpha = 0.08f)
+                                appearance.primary.copy(alpha = 0.08f)
                             )
                         } else {
                             Modifier
@@ -337,7 +339,7 @@ fun HomeCanvas(
                                 title =
                                     item.title ?: "Shortcut",
                                 accent =
-                                    profile.primaryAccent,
+                                    appearance.primary,
                                 profile = profile
                             )
                         }
@@ -347,7 +349,7 @@ fun HomeCanvas(
                                 title =
                                     item.title ?: "Folder",
                                 accent =
-                                    profile.primaryAccent,
+                                    appearance.primary,
                                 profile = profile
                             )
                         }
@@ -363,7 +365,7 @@ fun HomeCanvas(
                                     )
                                 )
                                 .background(
-                                    profile.primaryAccent.copy(
+                                    appearance.primary.copy(
                                         alpha = 0.045f
                                     )
                                 )
@@ -405,13 +407,13 @@ private fun AppCanvasItem(
                 label = app.label,
                 iconShape = iconShape,
                 size = 54.dp,
-                accentColor = profile.primaryAccent
+                accentColor = appearance.primary
             )
 
             if (showLabel) {
                 Text(
                     text = app.label,
-                    color = profile.textPrimary,
+                    color = appearance.onSurface,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
                     maxLines = 1
@@ -433,7 +435,7 @@ private fun CanvasPlaceholder(
             .padding(8.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(
-                profile.textPrimary.copy(alpha = 0.045f)
+                appearance.onSurface.copy(alpha = 0.045f)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -453,7 +455,7 @@ private fun CanvasPlaceholder(
 
             Text(
                 text = title,
-                color = profile.textPrimary,
+                color = appearance.onSurface,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -488,7 +490,7 @@ private fun EmptyCanvasHint(
     ) {
         Text(
             text = text,
-            color = profile.textPrimary.copy(alpha = 0.34f),
+            color = appearance.onSurface.copy(alpha = 0.34f),
             fontWeight = FontWeight.Medium
         )
     }

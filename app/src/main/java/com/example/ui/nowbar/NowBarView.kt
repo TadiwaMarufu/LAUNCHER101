@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.example.core.engine.NowBarStyle
 import com.example.core.engine.ProfileConfig
 import com.example.core.model.LauncherProfile
+import com.example.ui.theme.LocalLauncherAppearance
 import com.example.core.model.MediaPlaybackState
 import com.example.core.model.NowBarItem
 import com.example.core.model.NowBarType
@@ -52,6 +53,7 @@ fun NowBarView(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
     val barShape = when (config.nowBarStyle) {
         NowBarStyle.FLUID_PILL -> RoundedCornerShape(32.dp)
         NowBarStyle.PREMIUM_BORDERED -> RoundedCornerShape(20.dp)
@@ -63,21 +65,21 @@ fun NowBarView(
     val backgroundBrush = when (config.nowBarStyle) {
         NowBarStyle.FLUID_PILL -> Brush.horizontalGradient(
             colors = listOf(
-                profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha),
-                profile.primaryAccent.copy(alpha = 0.20f),
-                profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha)
+                appearance.surface.copy(alpha = appearance.surfaceAlpha),
+                appearance.primary.copy(alpha = 0.20f),
+                appearance.surface.copy(alpha = appearance.surfaceAlpha)
             )
         )
         NowBarStyle.EXPRESSIVE_CAPSULE -> Brush.linearGradient(
             colors = listOf(
-                profile.surfaceBase.copy(alpha = 0.9f),
-                profile.primaryAccent.copy(alpha = 0.35f)
+                appearance.surface.copy(alpha = 0.9f),
+                appearance.primary.copy(alpha = 0.35f)
             )
         )
         else -> Brush.linearGradient(
             colors = listOf(
-                profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha),
-                profile.surfaceBase.copy(alpha = config.cardBackgroundAlpha)
+                appearance.surface.copy(alpha = appearance.surfaceAlpha),
+                appearance.surface.copy(alpha = appearance.surfaceAlpha)
             )
         )
     }
@@ -87,7 +89,7 @@ fun NowBarView(
             .fillMaxWidth()
             .clip(barShape)
             .background(backgroundBrush)
-            .border(config.cardBorderWidth, config.cardBorderColor, barShape)
+            .border(appearance.borderWidth, appearance.divider, barShape)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .animateContentSize(),
         contentAlignment = Alignment.Center
@@ -101,7 +103,7 @@ fun NowBarView(
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(profile.primaryAccent.copy(alpha = 0.25f))
+                    .background(appearance.primary.copy(alpha = 0.25f))
                     .clickable { onProfileChipClick() }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -110,14 +112,14 @@ fun NowBarView(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(profile.primaryAccent)
+                        .background(appearance.primary)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = profile.title,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = profile.textPrimary
+                    color = appearance.onSurface
                 )
             }
 
@@ -136,7 +138,7 @@ fun NowBarView(
                     Icon(
                         imageVector = if (mediaState.isPlaying) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
                         contentDescription = "Media state",
-                        tint = profile.primaryAccent,
+                        tint = appearance.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -144,7 +146,7 @@ fun NowBarView(
                         text = if (mediaState.isPlaying) mediaState.title else "Purple Frequency",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = profile.textPrimary,
+                        color = appearance.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -169,7 +171,7 @@ fun NowBarView(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(profile.surfaceBase.copy(alpha = 0.4f))
+                            .background(appearance.surface.copy(alpha = 0.4f))
                             .clickable {
                                 when (item.type) {
                                     NowBarType.ACTION_SEARCH -> onSearchClick()
@@ -183,7 +185,7 @@ fun NowBarView(
                         Icon(
                             imageVector = item.icon,
                             contentDescription = item.title,
-                            tint = profile.textPrimary,
+                            tint = appearance.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
