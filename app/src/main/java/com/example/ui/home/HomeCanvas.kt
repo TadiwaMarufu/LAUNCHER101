@@ -110,6 +110,34 @@ fun HomeCanvas(
         val cellWidth = maxWidth / gridColumns
         val cellHeight = maxHeight / gridRows
 
+        /*
+         * Profile composition:
+         *
+         * FLUID       -> generous, organic breathing room
+         * PREMIUM     -> structured and balanced
+         * CALM        -> spacious and quiet
+         * FOCUS       -> compact and information-dense
+         * EXPRESSIVE  -> asymmetric-feeling visual rhythm
+         *
+         * Coordinates remain user-owned. These values only influence
+         * the visual treatment of the existing canvas.
+         */
+        val compositionScale = when (config.homeLayout) {
+            HomeLayoutStyle.FLUID_ORGANIC -> 1.00f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.98f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.96f
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 1.00f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.04f
+        }
+
+        val compositionAlpha = when (config.homeLayout) {
+            HomeLayoutStyle.FLUID_ORGANIC -> 1f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.98f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.90f
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 1f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1f
+        }
+
         items
             .asSequence()
             .filter { it.visible && it.page == 0 }
@@ -133,6 +161,55 @@ fun HomeCanvas(
 
                 val xOffset = cellWidth * safeX
                 val yOffset = cellHeight * safeY
+
+                /*
+                 * Personality-aware composition.
+                 *
+                 * We deliberately do not rewrite persisted coordinates.
+                 * The user's layout remains authoritative; profiles only
+                 * influence how each item breathes inside that layout.
+                 */
+                val itemContentScale = when (config.homeLayout) {
+                    HomeLayoutStyle.FLUID_ORGANIC -> {
+                        when (item.type) {
+                            HomeItemType.CLOCK -> 1.02f
+                            HomeItemType.NOW_BAR -> 1.00f
+                            else -> 0.96f
+                        }
+                    }
+
+                    HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> {
+                        when (item.type) {
+                            HomeItemType.CLOCK -> 0.96f
+                            HomeItemType.NOW_BAR -> 0.94f
+                            else -> 0.94f
+                        }
+                    }
+
+                    HomeLayoutStyle.CALM_MINIMALIST -> {
+                        when (item.type) {
+                            HomeItemType.CLOCK -> 0.92f
+                            HomeItemType.NOW_BAR -> 0.90f
+                            else -> 0.90f
+                        }
+                    }
+
+                    HomeLayoutStyle.FOCUS_DASHBOARD -> {
+                        when (item.type) {
+                            HomeItemType.CLOCK -> 0.94f
+                            HomeItemType.NOW_BAR -> 0.98f
+                            else -> 0.98f
+                        }
+                    }
+
+                    HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> {
+                        when (item.type) {
+                            HomeItemType.CLOCK -> 1.06f
+                            HomeItemType.NOW_BAR -> 1.02f
+                            else -> 1.00f
+                        }
+                    }
+                }
 
                 var dragX by remember(item.id) {
                     mutableFloatStateOf(0f)
@@ -161,7 +238,11 @@ fun HomeCanvas(
                     }
                     .width(itemWidth)
                     .height(itemHeight)
-                    .scale(scale)
+                    .scale(
+                        scale *
+                            compositionScale *
+                            itemContentScale
+                    )
                     .clip(
                         RoundedCornerShape(
                             config.cornerRadius
@@ -170,7 +251,9 @@ fun HomeCanvas(
                     .then(
                         if (editMode) {
                             Modifier.background(
-                                appearance.primary.copy(alpha = 0.08f)
+                                appearance.primary.copy(
+                                    alpha = 0.08f * compositionAlpha
+                                )
                             )
                         } else {
                             Modifier
@@ -264,34 +347,58 @@ fun HomeCanvas(
                     when (item.type) {
 
                         HomeItemType.CLOCK -> {
-                            PersonalityClockWidget(
-                                config = config,
-                                modifier = Modifier.fillMaxSize(),
-                                onClockClick = {
-                                    onItemClick(item)
-                                }
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                        horizontal =
+                                            config.itemHorizontalPadding,
+                                        vertical =
+                                            config.itemVerticalPadding
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                PersonalityClockWidget(
+                                    config = config,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onClockClick = {
+                                        onItemClick(item)
+                                    }
+                                )
+                            }
                         }
 
                         HomeItemType.NOW_BAR -> {
-                            NowBarView(
-                                items = nowBarItems,
-                                mediaState = mediaState,
-                                profile = profile,
-                                config = config,
-                                onProfileChipClick =
-                                    onProfileChipClick,
-                                onMediaPlayToggle =
-                                    onMediaPlayToggle,
-                                onSearchClick =
-                                    onSearchClick,
-                                onDrawerClick =
-                                    onDrawerClick,
-                                onSettingsClick =
-                                    onSettingsClick,
-                                modifier =
-                                    Modifier.fillMaxSize()
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                        horizontal =
+                                            config.itemHorizontalPadding,
+                                        vertical =
+                                            config.itemVerticalPadding
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                NowBarView(
+                                    items = nowBarItems,
+                                    mediaState = mediaState,
+                                    profile = profile,
+                                    config = config,
+                                    onProfileChipClick =
+                                        onProfileChipClick,
+                                    onMediaPlayToggle =
+                                        onMediaPlayToggle,
+                                    onSearchClick =
+                                        onSearchClick,
+                                    onDrawerClick =
+                                        onDrawerClick,
+                                    onSettingsClick =
+                                        onSettingsClick,
+                                    modifier =
+                                        Modifier.fillMaxSize()
+                                )
+                            }
                         }
 
                         HomeItemType.APP -> {
