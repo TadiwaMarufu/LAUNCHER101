@@ -81,196 +81,286 @@ fun PersonalityClockWidget(
         }
     }
 
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val hourFormat = SimpleDateFormat("HH", Locale.getDefault())
     val minuteFormat = SimpleDateFormat("mm", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
-    val shortDateFormat = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dateFormat = SimpleDateFormat(
+        "EEEE, d MMMM",
+        Locale.getDefault()
+    )
+    val shortDateFormat = SimpleDateFormat(
+        "EEE, d MMM",
+        Locale.getDefault()
+    )
 
-    val profile = config.profile
+    val shape = RoundedCornerShape(config.cornerRadius)
 
     when (config.clockStyle) {
+
+        /*
+         * FLUID
+         *
+         * Soft, contextual and alive.
+         * The clock is a composed surface rather than a bare number.
+         */
         ClockStyle.FLUID_ROUNDED -> {
-            // Alive, soft flowing pill widget
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(config.cornerRadius))
-                    .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-                    .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
-                    .clickable { onClockClick() }
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = timeFormat.format(currentTime),
-                            fontSize = 44.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = appearance.onSurface,
-                            letterSpacing = (-1).sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = dateFormat.format(currentTime),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = appearance.onSurfaceVariant
-                        )
-                    }
-
-                    // Fluid ambient pulse indicator
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(appearance.primary.copy(alpha = 0.18f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(appearance.primary)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "24°C Clear",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = appearance.primary
-                        )
-                    }
-                }
-            }
-        }
-
-        ClockStyle.PREMIUM_SPLIT -> {
-            // Architectural split luxury clock inspired by high-end typography
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clickable { onClockClick() },
-                horizontalAlignment = Alignment.Start
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(appearance.primary)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = dateFormat.format(currentTime).uppercase(Locale.getDefault()),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp,
-                        color = appearance.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = hourFormat.format(currentTime),
-                        fontSize = 72.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontFamily = FontFamily.SansSerif,
-                        color = appearance.onSurface,
-                        letterSpacing = (-3).sp
-                    )
-                    Text(
-                        text = ":",
-                        fontSize = 64.sp,
-                        fontWeight = FontWeight.Light,
-                        color = appearance.primary.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
-                    )
-                    Text(
-                        text = minuteFormat.format(currentTime),
-                        fontSize = 72.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
-                        color = appearance.onSurface.copy(alpha = 0.85f),
-                        letterSpacing = (-3).sp
-                    )
-                }
-            }
-        }
-
-        ClockStyle.CALM_INLINE -> {
-            // Minimal Zen single line
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clickable { onClockClick() },
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = timeFormat.format(currentTime),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Light,
-                    color = appearance.onSurface,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = shortDateFormat.format(currentTime).lowercase(Locale.getDefault()),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = appearance.onSurfaceVariant
-                )
-            }
-        }
-
-        ClockStyle.FOCUS_DIGITAL -> {
-            // High efficiency productivity header
             Row(
                 modifier = modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(config.cornerRadius))
-                    .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-                    .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
+                    .clip(shape)
+                    .background(
+                        appearance.surface.copy(
+                            alpha = appearance.surfaceAlpha
+                        )
+                    )
+                    .border(
+                        appearance.borderWidth.dp,
+                        appearance.divider.copy(alpha = 0.55f),
+                        shape
+                    )
                     .clickable { onClockClick() }
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(
+                        horizontal = 22.dp,
+                        vertical = 18.dp
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = timeFormat.format(currentTime),
-                        fontSize = 36.sp,
+                        fontSize = 46.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = (-2).sp,
                         color = appearance.onSurface
                     )
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
                     Text(
-                        text = shortDateFormat.format(currentTime),
-                        fontSize = 12.sp,
+                        text = dateFormat.format(currentTime),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = appearance.onSurfaceVariant
                     )
                 }
 
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(11.dp)
+                            .clip(CircleShape)
+                            .background(appearance.primary)
+                    )
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    Text(
+                        text = "NOW",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        color = appearance.primary
+                    )
+                }
+            }
+        }
+
+        /*
+         * PREMIUM
+         *
+         * Architectural typography.
+         * Large hour, restrained minute, precise metadata.
+         */
+        ClockStyle.PREMIUM_SPLIT -> {
+            Column(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clickable { onClockClick() }
+            ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "FOCUS MODE",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = appearance.primary,
-                            letterSpacing = 1.sp
+                    Box(
+                        modifier = Modifier
+                            .width(22.dp)
+                            .height(1.dp)
+                            .background(appearance.primary)
+                    )
+
+                    Spacer(modifier = Modifier.width(9.dp))
+
+                    Text(
+                        text = dateFormat
+                            .format(currentTime)
+                            .uppercase(Locale.getDefault()),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.8.sp,
+                        color = appearance.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(5.dp))
+
+                Row(
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = hourFormat.format(currentTime),
+                        fontSize = 70.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-4).sp,
+                        color = appearance.onSurface
+                    )
+
+                    Text(
+                        text = ":",
+                        fontSize = 58.sp,
+                        fontWeight = FontWeight.Light,
+                        color = appearance.primary,
+                        modifier = Modifier.padding(
+                            horizontal = 3.dp,
+                            vertical = 7.dp
                         )
+                    )
+
+                    Text(
+                        text = minuteFormat.format(currentTime),
+                        fontSize = 70.sp,
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = (-4).sp,
+                        color = appearance.onSurface.copy(alpha = 0.72f)
+                    )
+                }
+            }
+        }
+
+        /*
+         * CALM
+         *
+         * Almost disappears into the wallpaper.
+         * No card, no decorative accent, no unnecessary information.
+         */
+        ClockStyle.CALM_INLINE -> {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clickable { onClockClick() },
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = timeFormat.format(currentTime),
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 1.sp,
+                    color = appearance.onSurface
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = shortDateFormat
+                        .format(currentTime)
+                        .lowercase(Locale.getDefault()),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = appearance.onSurfaceVariant.copy(
+                        alpha = 0.72f
+                    ),
+                    modifier = Modifier.padding(bottom = 5.dp)
+                )
+            }
+        }
+
+        /*
+         * FOCUS
+         *
+         * Information-first.
+         * Time is paired with an explicit working-state indicator.
+         */
+        ClockStyle.FOCUS_DIGITAL -> {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clip(
+                        RoundedCornerShape(
+                            (config.cornerRadius * 0.72f)
+                        )
+                    )
+                    .background(
+                        appearance.surface.copy(
+                            alpha = appearance.surfaceAlpha
+                        )
+                    )
+                    .border(
+                        appearance.borderWidth.dp,
+                        appearance.divider,
+                        RoundedCornerShape(
+                            (config.cornerRadius * 0.72f)
+                        )
+                    )
+                    .clickable { onClockClick() }
+                    .padding(
+                        horizontal = 18.dp,
+                        vertical = 14.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = timeFormat.format(currentTime),
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = (-1).sp,
+                        color = appearance.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = shortDateFormat.format(currentTime),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = appearance.onSurfaceVariant
+                    )
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "FOCUS",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.5.sp,
+                        color = appearance.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(appearance.primary)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
                         Text(
-                            text = "3 Tasks Due",
-                            fontSize = 12.sp,
+                            text = "READY",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = appearance.onSurfaceVariant
                         )
                     }
@@ -278,35 +368,63 @@ fun PersonalityClockWidget(
             }
         }
 
+        /*
+         * EXPRESSIVE
+         *
+         * Deliberately oversized typography.
+         * Composition is the decoration; no card is required.
+         */
         ClockStyle.EXPRESSIVE_MASSIVE -> {
-            // Bold avant-garde artistic staggered typography
             Column(
                 modifier = modifier
                     .fillMaxWidth()
-                    .clickable { onClockClick() },
-                horizontalAlignment = Alignment.Start
+                    .clickable { onClockClick() }
             ) {
-                Text(
-                    text = hourFormat.format(currentTime),
-                    fontSize = 88.sp,
-                    fontWeight = FontWeight.Black,
-                    lineHeight = 76.sp,
-                    color = appearance.primary
-                )
-                Text(
-                    text = minuteFormat.format(currentTime),
-                    fontSize = 88.sp,
-                    fontWeight = FontWeight.Light,
-                    lineHeight = 76.sp,
-                    color = appearance.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "• ${dateFormat.format(currentTime)}",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = appearance.secondary
-                )
+                Row(
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = hourFormat.format(currentTime),
+                        fontSize = 82.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 72.sp,
+                        letterSpacing = (-5).sp,
+                        color = appearance.primary
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = minuteFormat.format(currentTime),
+                        fontSize = 82.sp,
+                        fontWeight = FontWeight.Light,
+                        lineHeight = 72.sp,
+                        letterSpacing = (-5).sp,
+                        color = appearance.onSurface
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(7.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(28.dp)
+                            .height(2.dp)
+                            .background(appearance.primary)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = dateFormat.format(currentTime),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = appearance.onSurfaceVariant
+                    )
+                }
             }
         }
     }

@@ -187,108 +187,113 @@ fun HomeScreen(
                     }
             )
 
-            HomeCanvas(
-                items = state.homeItems,
-                allApps = allApps,
-                iconShape = state.iconShape,
-                showIconLabels = state.showIconLabels,
-                nowBarController = nowBarController,
-                profile = activeProfile,
+            LauncherHomeStage(
                 config = profileConfig,
-                modifier = Modifier.fillMaxSize(),
-                editMode = editMode,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                HomeCanvas(
+                    items = state.homeItems,
+                    allApps = allApps,
+                    iconShape = state.iconShape,
+                    showIconLabels = state.showIconLabels,
+                    nowBarController = nowBarController,
+                    profile = activeProfile,
+                    config = profileConfig,
+                    modifier = Modifier.fillMaxSize(),
+                    editMode = editMode,
 
-                onLongPress = {
-                    editMode = true
-                    overlayState = LauncherOverlayState.NONE
-                },
+                    onLongPress = {
+                        editMode = true
+                        overlayState = LauncherOverlayState.NONE
+                    },
 
-                onEmptyTap = {
-                    if (editMode) {
-                        editMode = false
-                    }
-                },
+                    onEmptyTap = {
+                        if (editMode) {
+                            editMode = false
+                        }
+                    },
 
-                onItemClick = { item ->
-                    if (editMode) {
-                        selectedItem = item
-                        overlayState =
-                            LauncherOverlayState.ITEM_MENU
-                        return@HomeCanvas
-                    }
-
-                    when (item.type) {
-                        HomeItemType.APP -> {
-                            val component =
-                                if (
-                                    !item.packageName.isNullOrBlank() &&
-                                    !item.activityName.isNullOrBlank()
-                                ) {
-                                    "${item.packageName}/${item.activityName}"
-                                } else {
-                                    null
-                                }
-
-                            val app = allApps.firstOrNull {
-                                it.componentNameString == component
-                            }
-
-                            if (app != null) {
-                                homeViewModel.launchApp(
-                                    context,
-                                    app
-                                )
-                            }
+                    onItemClick = { item ->
+                        if (editMode) {
+                            selectedItem = item
+                            overlayState =
+                                LauncherOverlayState.ITEM_MENU
+                            return@HomeCanvas
                         }
 
-                        HomeItemType.CLOCK,
-                        HomeItemType.NOW_BAR,
-                        HomeItemType.WIDGET,
-                        HomeItemType.SHORTCUT,
-                        HomeItemType.FOLDER -> Unit
+                        when (item.type) {
+                            HomeItemType.APP -> {
+                                val component =
+                                    if (
+                                        !item.packageName.isNullOrBlank() &&
+                                        !item.activityName.isNullOrBlank()
+                                    ) {
+                                        "${item.packageName}/${item.activityName}"
+                                    } else {
+                                        null
+                                    }
+
+                                val app = allApps.firstOrNull {
+                                    it.componentNameString == component
+                                }
+
+                                if (app != null) {
+                                    homeViewModel.launchApp(
+                                        context,
+                                        app
+                                    )
+                                }
+                            }
+
+                            HomeItemType.CLOCK,
+                            HomeItemType.NOW_BAR,
+                            HomeItemType.WIDGET,
+                            HomeItemType.SHORTCUT,
+                            HomeItemType.FOLDER -> Unit
+                        }
+                    },
+
+                    onItemLongPress = { item ->
+                        selectedItem = item
+                        editMode = true
+                        overlayState =
+                            LauncherOverlayState.ITEM_MENU
+                    },
+
+                    onItemMove = { item, x, y ->
+                        homeViewModel.moveHomeItem(
+                            itemId = item.id,
+                            page = item.page,
+                            x = x,
+                            y = y
+                        )
+                    },
+
+                    onProfileChipClick = {
+                        overlayState =
+                            LauncherOverlayState.PROFILE_SWITCHER
+                    },
+
+                    onMediaPlayToggle = {
+                        nowBarController.toggleMediaPlayback()
+                    },
+
+                    onSearchClick = {
+                        overlayState =
+                            LauncherOverlayState.SEARCH
+                    },
+
+                    onDrawerClick = {
+                        overlayState =
+                            LauncherOverlayState.APP_DRAWER
+                    },
+
+                    onSettingsClick = {
+                        overlayState =
+                            LauncherOverlayState.SETTINGS
                     }
-                },
-
-                onItemLongPress = { item ->
-                    selectedItem = item
-                    editMode = true
-                    overlayState =
-                        LauncherOverlayState.ITEM_MENU
-                },
-
-                onItemMove = { item, x, y ->
-                    homeViewModel.moveHomeItem(
-                        itemId = item.id,
-                        page = item.page,
-                        x = x,
-                        y = y
-                    )
-                },
-
-                onProfileChipClick = {
-                    overlayState =
-                        LauncherOverlayState.PROFILE_SWITCHER
-                },
-
-                onMediaPlayToggle = {
-                    nowBarController.toggleMediaPlayback()
-                },
-
-                onSearchClick = {
-                    overlayState =
-                        LauncherOverlayState.SEARCH
-                },
-
-                onDrawerClick = {
-                    overlayState =
-                        LauncherOverlayState.APP_DRAWER
-                },
-
-                onSettingsClick = {
-                    overlayState =
-                        LauncherOverlayState.SETTINGS
-                }
-            )
+                )
+            }
 
             /*
              * Edit-mode controls are temporary.

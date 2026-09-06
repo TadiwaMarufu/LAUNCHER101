@@ -122,20 +122,59 @@ fun HomeCanvas(
          * Coordinates remain user-owned. These values only influence
          * the visual treatment of the existing canvas.
          */
+        /*
+         * The profile changes composition, never persisted geometry.
+         *
+         * This is the visual bridge between Smart Launcher-style
+         * density and One UI-style spatial hierarchy.
+         */
         val compositionScale = when (config.homeLayout) {
             HomeLayoutStyle.FLUID_ORGANIC -> 1.00f
-            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.98f
-            HomeLayoutStyle.CALM_MINIMALIST -> 0.96f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.985f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.955f
             HomeLayoutStyle.FOCUS_DASHBOARD -> 1.00f
-            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.04f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.035f
         }
 
         val compositionAlpha = when (config.homeLayout) {
-            HomeLayoutStyle.FLUID_ORGANIC -> 1f
-            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.98f
-            HomeLayoutStyle.CALM_MINIMALIST -> 0.90f
-            HomeLayoutStyle.FOCUS_DASHBOARD -> 1f
-            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1f
+            HomeLayoutStyle.FLUID_ORGANIC -> 1.00f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.97f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.88f
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 1.00f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.00f
+        }
+
+        val canvasInset = when (config.homeLayout) {
+            HomeLayoutStyle.FLUID_ORGANIC -> 2.dp
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 4.dp
+            HomeLayoutStyle.CALM_MINIMALIST -> 7.dp
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 1.dp
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 0.dp
+        }
+
+        val itemCornerRadius = when (config.homeLayout) {
+            HomeLayoutStyle.FLUID_ORGANIC ->
+                config.cornerRadius
+
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL ->
+                config.cornerRadius * 0.82f
+
+            HomeLayoutStyle.CALM_MINIMALIST ->
+                config.cornerRadius * 0.70f
+
+            HomeLayoutStyle.FOCUS_DASHBOARD ->
+                config.cornerRadius * 0.62f
+
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE ->
+                config.cornerRadius * 1.18f
+        }
+
+        val editSurfaceAlpha = when (config.homeLayout) {
+            HomeLayoutStyle.FLUID_ORGANIC -> 0.055f
+            HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.045f
+            HomeLayoutStyle.CALM_MINIMALIST -> 0.025f
+            HomeLayoutStyle.FOCUS_DASHBOARD -> 0.065f
+            HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 0.075f
         }
 
         items
@@ -230,6 +269,7 @@ fun HomeCanvas(
                 )
 
                 val itemModifier = Modifier
+                    .padding(canvasInset)
                     .offset {
                         IntOffset(
                             x = xOffset.roundToPx() + dragX.roundToInt(),
@@ -244,15 +284,15 @@ fun HomeCanvas(
                             itemContentScale
                     )
                     .clip(
-                        RoundedCornerShape(
-                            config.cornerRadius
-                        )
+                        RoundedCornerShape(itemCornerRadius)
                     )
                     .then(
                         if (editMode) {
                             Modifier.background(
                                 appearance.primary.copy(
-                                    alpha = 0.08f * compositionAlpha
+                                    alpha =
+                                        editSurfaceAlpha *
+                                            compositionAlpha
                                 )
                             )
                         } else {
@@ -507,11 +547,36 @@ private fun AppCanvasItem(
 ) {
     val appearance = LocalLauncherAppearance.current
 
+    val iconScale = when (config.homeLayout) {
+        HomeLayoutStyle.FLUID_ORGANIC -> 1.00f
+        HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.94f
+        HomeLayoutStyle.CALM_MINIMALIST -> 0.88f
+        HomeLayoutStyle.FOCUS_DASHBOARD -> 0.92f
+        HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.08f
+    }
+
+    val labelAlpha = when (config.homeLayout) {
+        HomeLayoutStyle.FLUID_ORGANIC -> 0.92f
+        HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 0.82f
+        HomeLayoutStyle.CALM_MINIMALIST -> 0.64f
+        HomeLayoutStyle.FOCUS_DASHBOARD -> 0.90f
+        HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 1.00f
+    }
+
+    val labelWeight = when (config.homeLayout) {
+        HomeLayoutStyle.FLUID_ORGANIC -> FontWeight.Medium
+        HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> FontWeight.Medium
+        HomeLayoutStyle.CALM_MINIMALIST -> FontWeight.Normal
+        HomeLayoutStyle.FOCUS_DASHBOARD -> FontWeight.SemiBold
+        HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> FontWeight.Bold
+    }
+
     Box(
-        modifier = modifier.padding(
-            horizontal = config.itemHorizontalPadding,
-            vertical = config.itemVerticalPadding
-        ),
+        modifier = modifier
+            .padding(
+                horizontal = config.itemHorizontalPadding,
+                vertical = config.itemVerticalPadding
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -519,19 +584,33 @@ private fun AppCanvasItem(
             verticalArrangement =
                 Arrangement.spacedBy(config.itemSpacing)
         ) {
-            AppIconImage(
-                drawable = app.icon,
-                label = app.label,
-                iconShape = iconShape,
-                size = config.iconSize,
-                accentColor = appearance.primary
-            )
+            Box(
+                modifier = Modifier
+                    .scale(iconScale)
+            ) {
+                AppIconImage(
+                    drawable = app.icon,
+                    label = app.label,
+                    iconShape = iconShape,
+                    size = config.iconSize,
+                    accentColor = appearance.primary
+                )
+            }
 
             if (showLabel) {
                 Text(
                     text = app.label,
-                    color = appearance.onSurface,
-                    fontWeight = FontWeight.Medium,
+                    color = appearance.onSurface.copy(
+                        alpha = labelAlpha
+                    ),
+                    fontWeight = labelWeight,
+                    fontSize = when (config.homeLayout) {
+                        HomeLayoutStyle.FLUID_ORGANIC -> 13.sp
+                        HomeLayoutStyle.PREMIUM_ARCHITECTURAL -> 12.sp
+                        HomeLayoutStyle.CALM_MINIMALIST -> 12.sp
+                        HomeLayoutStyle.FOCUS_DASHBOARD -> 12.sp
+                        HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE -> 13.sp
+                    },
                     textAlign = TextAlign.Center,
                     maxLines = 1
                 )
@@ -548,34 +627,89 @@ private fun CanvasPlaceholder(
 ) {
     val appearance = LocalLauncherAppearance.current
 
+    val radius = when (profile) {
+        LauncherProfile.FLUID -> 24.dp
+        LauncherProfile.PREMIUM -> 18.dp
+        LauncherProfile.CALM -> 16.dp
+        LauncherProfile.FOCUS -> 14.dp
+        LauncherProfile.EXPRESSIVE -> 30.dp
+    }
+
+    val surfaceAlpha = when (profile) {
+        LauncherProfile.FLUID -> 0.055f
+        LauncherProfile.PREMIUM -> 0.045f
+        LauncherProfile.CALM -> 0.025f
+        LauncherProfile.FOCUS -> 0.065f
+        LauncherProfile.EXPRESSIVE -> 0.075f
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(radius))
             .background(
-                appearance.onSurface.copy(alpha = 0.045f)
+                appearance.onSurface.copy(
+                    alpha = surfaceAlpha
+                )
             ),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement =
+                Arrangement.spacedBy(7.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .width(38.dp)
-                    .height(38.dp)
-                    .clip(CircleShape)
+                    .width(
+                        when (profile) {
+                            LauncherProfile.EXPRESSIVE -> 44.dp
+                            else -> 36.dp
+                        }
+                    )
+                    .height(
+                        when (profile) {
+                            LauncherProfile.EXPRESSIVE -> 44.dp
+                            else -> 36.dp
+                        }
+                    )
+                    .clip(
+                        if (profile == LauncherProfile.PREMIUM) {
+                            RoundedCornerShape(10.dp)
+                        } else {
+                            CircleShape
+                        }
+                    )
                     .background(
-                        accent.copy(alpha = 0.12f)
+                        accent.copy(
+                            alpha = when (profile) {
+                                LauncherProfile.CALM -> 0.06f
+                                LauncherProfile.PREMIUM -> 0.08f
+                                LauncherProfile.FOCUS -> 0.10f
+                                LauncherProfile.EXPRESSIVE -> 0.16f
+                                LauncherProfile.FLUID -> 0.12f
+                            }
+                        )
                     )
             )
 
             Text(
                 text = title,
-                color = appearance.onSurface,
-                fontWeight = FontWeight.Medium
+                color = appearance.onSurface.copy(
+                    alpha = when (profile) {
+                        LauncherProfile.CALM -> 0.58f
+                        LauncherProfile.PREMIUM -> 0.72f
+                        else -> 0.86f
+                    }
+                ),
+                fontWeight = when (profile) {
+                    LauncherProfile.CALM -> FontWeight.Normal
+                    LauncherProfile.PREMIUM -> FontWeight.Medium
+                    LauncherProfile.FOCUS -> FontWeight.SemiBold
+                    LauncherProfile.EXPRESSIVE -> FontWeight.Bold
+                    LauncherProfile.FLUID -> FontWeight.Medium
+                }
             )
         }
     }
