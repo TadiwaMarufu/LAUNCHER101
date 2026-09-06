@@ -41,8 +41,8 @@ import com.example.core.LauncherDependencies
 import com.example.core.engine.ProfileEngine
 import com.example.core.model.HomeItem
 import com.example.core.model.HomeItemType
-import com.example.core.model.LauncherProfile
 import com.example.core.nowbar.NowBarController
+import com.example.core.model.LauncherProfile
 import com.example.ui.drawer.AppDrawerView
 import com.example.ui.profileswitcher.ProfileSwitcherDialog
 import com.example.ui.search.UniversalSearchSheet
@@ -58,6 +58,17 @@ enum class LauncherOverlayState {
     ITEM_MENU
 }
 
+/**
+ * Main launcher surface.
+ *
+ * HomeScreen owns orchestration only:
+ * - launcher state
+ * - overlays
+ * - profile selection
+ * - navigation gestures
+ *
+ * The actual home surface is entirely owned by HomeCanvas/HomeItem state.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -71,10 +82,7 @@ fun HomeScreen(
     }
 
     val homeViewModel: HomeViewModel = viewModel(
-        factory =
-            HomeViewModelFactory(
-                dependencies
-            )
+        factory = HomeViewModelFactory(dependencies)
     )
 
     val state by homeViewModel.uiState.collectAsState()
@@ -106,15 +114,11 @@ fun HomeScreen(
     val activeProfile = state.activeProfile
 
     val profileConfig = remember(activeProfile) {
-        ProfileEngine.getConfig(
-            activeProfile
-        )
+        ProfileEngine.getConfig(activeProfile)
     }
 
     var overlayState by remember {
-        mutableStateOf(
-            LauncherOverlayState.NONE
-        )
+        mutableStateOf(LauncherOverlayState.NONE)
     }
 
     var editMode by remember {
@@ -137,58 +141,71 @@ fun HomeScreen(
         preset = state.wallpaperPreset
     ) {
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .pointerInput(activeProfile) {
-                    detectDragGestures(
-                        onDragEnd = {
-                            when {
-                                dragAccumulatorY < -100f -> {
-                                    overlayState =
-                                        LauncherOverlayState.APP_DRAWER
-                                }
-
-                                dragAccumulatorY > 100f -> {
-                                    overlayState =
-                                        LauncherOverlayState.SEARCH
-                                }
-                            }
-
-                            dragAccumulatorY = 0f
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            dragAccumulatorY += dragAmount.y
-                        }
-                    )
-                }
+            modifier = modifier.fillMaxSize()
         ) {
+
+            /*
+             * Global navigation gestures.
+             *
+             * HomeCanvas owns long-press/item gestures.
+             * This layer only handles directional navigation.
+             */
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(activeProfile) {
+                        detectDragGestures(
+                            onDragStart = {
+                                dragAccumulatorY = 0f
+                            },
+                            onDragEnd = {
+                                when {
+                                    dragAccumulatorY < -100f -> {
+                                        overlayState =
+                                            LauncherOverlayState.APP_DRAWER
+                                        editMode = false
+                                    }
+
+                                    dragAccumulatorY > 100f -> {
+                                        overlayState =
+                                            LauncherOverlayState.SEARCH
+                                        editMode = false
+                                    }
+                                }
+
+                                dragAccumulatorY = 0f
+                            },
+                            onDragCancel = {
+                                dragAccumulatorY = 0f
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                dragAccumulatorY += dragAmount.y
+                            }
+                        )
+                    }
+            )
 
             HomeCanvas(
                 items = state.homeItems,
                 allApps = allApps,
                 iconShape = state.iconShape,
-                showIconLabels =
-                    state.showIconLabels,
-                nowBarController =
-                    nowBarController,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(
-                            horizontal = 20.dp,
-                            vertical = 24.dp
-                        ),
+                showIconLabels = state.showIconLabels,
+                nowBarController = nowBarController,
+                profile = activeProfile,
+                config = profileConfig,
+                modifier = Modifier.fillMaxSize(),
                 editMode = editMode,
 
                 onLongPress = {
                     editMode = true
-                    overlayState =
-                        LauncherOverlayState.NONE
+                    overlayState = LauncherOverlayState.NONE
                 },
 
                 onEmptyTap = {
-                    editMode = false
+                    if (editMode) {
+                        editMode = false
+                    }
                 },
 
                 onItemClick = { item ->
@@ -201,11 +218,19 @@ fun HomeScreen(
 
                     when (item.type) {
                         HomeItemType.APP -> {
-                            val app =
-                                allApps.firstOrNull {
-                                    it.componentNameString ==
-                                        "${item.packageName}/${item.activityName}"
+                            val component =
+                                if (
+                                    !item.packageName.isNullOrBlank() &&
+                                    !item.activityName.isNullOrBlank()
+                                ) {
+                                    "${item.packageName}/${item.activityName}"
+                                } else {
+                                    null
                                 }
+
+                            val app = allApps.firstOrNull {
+                                it.componentNameString == component
+                            }
 
                             if (app != null) {
                                 homeViewModel.launchApp(
@@ -215,15 +240,9 @@ fun HomeScreen(
                             }
                         }
 
-                        HomeItemType.CLOCK -> {
-                            overlayState =
-                                LauncherOverlayState.PROFILE_SWITCHER
-                        }
-
-                        HomeItemType.NOW_BAR -> Unit
-
-                        HomeItemType.WIDGET -> Unit
-
+                        HomeItemType.CLOCK,
+                        HomeItemType.NOW_BAR,
+                        HomeItemType.WIDGET,
                         HomeItemType.SHORTCUT,
                         HomeItemType.FOLDER -> Unit
                     }
@@ -236,79 +255,90 @@ fun HomeScreen(
                         LauncherOverlayState.ITEM_MENU
                 },
 
-                onItemMove = { item, x, y ->
+                onItemMove = { item, page, x, y ->
                     homeViewModel.moveHomeItem(
                         itemId = item.id,
-                        page = item.page,
+                        page = page,
                         x = x,
                         y = y
                     )
                 },
 
-                onLaunchApp = { app ->
-                    homeViewModel.launchApp(
-                        context,
-                        app
-                    )
+                onProfileChipClick = {
+                    overlayState =
+                        LauncherOverlayState.PROFILE_SWITCHER
+                },
+
+                onMediaPlayToggle = {
+                    nowBarController.toggleMediaPlayback()
+                },
+
+                onSearchClick = {
+                    overlayState =
+                        LauncherOverlayState.SEARCH
+                },
+
+                onDrawerClick = {
+                    overlayState =
+                        LauncherOverlayState.APP_DRAWER
+                },
+
+                onSettingsClick = {
+                    overlayState =
+                        LauncherOverlayState.SETTINGS
                 }
             )
 
             /*
-             * Small edit-mode control surface.
-             *
-             * It deliberately does not become a permanent home component.
+             * Edit-mode controls are temporary.
+             * They are not part of the user's home canvas.
              */
             AnimatedVisibility(
-                visible = editMode &&
-                    overlayState ==
-                        LauncherOverlayState.NONE,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 20.dp),
+                visible =
+                    editMode &&
+                        overlayState ==
+                            LauncherOverlayState.NONE,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .background(
-                                Color.Black.copy(
-                                    alpha = 0.72f
-                                )
-                            )
-                            .padding(
-                                horizontal = 8.dp,
-                                vertical = 6.dp
-                            ),
+                    modifier = Modifier
+                        .background(
+                            Color.Black.copy(alpha = 0.72f)
+                        )
+                        .padding(
+                            horizontal = 8.dp,
+                            vertical = 6.dp
+                        ),
                     horizontalArrangement =
                         Arrangement.spacedBy(4.dp)
                 ) {
-                    EditAction(
-                        text = "Add"
-                    ) {
+                    EditAction("Add") {
                         overlayState =
                             LauncherOverlayState.ADD_MENU
                     }
 
-                    EditAction(
-                        text = "Profile"
-                    ) {
+                    EditAction("Profile") {
                         overlayState =
                             LauncherOverlayState.PROFILE_SWITCHER
                     }
 
-                    EditAction(
-                        text = "Done"
-                    ) {
+                    EditAction("Settings") {
+                        overlayState =
+                            LauncherOverlayState.SETTINGS
+                    }
+
+                    EditAction("Done") {
                         editMode = false
                     }
                 }
             }
 
             /*
-             * Drawer, search, settings and profile switching remain
-             * overlays rather than becoming home-screen content.
+             * App drawer.
              */
             AnimatedVisibility(
                 visible =
@@ -325,26 +355,18 @@ fun HomeScreen(
             ) {
                 AppDrawerView(
                     allApps = allApps,
-                    categorizedApps =
-                        categorizedApps,
-                    recentlyLaunched =
-                        recentlyLaunched,
-                    frequentlyLaunched =
-                        frequentlyLaunched,
-                    usageTrackingEnabled =
-                        usageTrackingEnabled,
+                    categorizedApps = categorizedApps,
+                    recentlyLaunched = recentlyLaunched,
+                    frequentlyLaunched = frequentlyLaunched,
+                    usageTrackingEnabled = usageTrackingEnabled,
                     profile = activeProfile,
                     config = profileConfig,
                     iconShape = state.iconShape,
-                    showLabels =
-                        state.showIconLabels,
+                    showLabels = state.showIconLabels,
 
                     onAppClick = { app ->
                         if (addingApp) {
-                            homeViewModel.addAppToHome(
-                                app
-                            )
-
+                            homeViewModel.addAppToHome(app)
                             addingApp = false
                             overlayState =
                                 LauncherOverlayState.NONE
@@ -361,9 +383,9 @@ fun HomeScreen(
                     },
 
                     onAppLongClick = { app ->
-                        homeViewModel.toggleAppPin(
-                            app.componentNameString
-                        )
+                        if (editMode) {
+                            homeViewModel.toggleAppPin(app)
+                        }
                     },
 
                     onCloseDrawer = {
@@ -374,6 +396,9 @@ fun HomeScreen(
                 )
             }
 
+            /*
+             * Universal search.
+             */
             AnimatedVisibility(
                 visible =
                     overlayState ==
@@ -398,6 +423,9 @@ fun HomeScreen(
                 )
             }
 
+            /*
+             * Settings.
+             */
             AnimatedVisibility(
                 visible =
                     overlayState ==
@@ -417,6 +445,9 @@ fun HomeScreen(
                 )
             }
 
+            /*
+             * Profile switcher.
+             */
             if (
                 overlayState ==
                     LauncherOverlayState.PROFILE_SWITCHER
@@ -430,21 +461,18 @@ fun HomeScreen(
                         rememberModalBottomSheetState(
                             skipPartiallyExpanded = true
                         ),
-                    containerColor =
-                        Color.Transparent,
+                    containerColor = Color.Transparent,
                     dragHandle = null
                 ) {
                     ProfileSwitcherDialog(
-                        activeProfile =
-                            activeProfile,
-                        onSelectProfile = {
-                            homeViewModel.setProfile(
-                                it
-                            )
+                        activeProfile = activeProfile,
 
+                        onSelectProfile = { profile ->
+                            homeViewModel.setProfile(profile)
                             overlayState =
                                 LauncherOverlayState.NONE
                         },
+
                         onDismiss = {
                             overlayState =
                                 LauncherOverlayState.NONE
@@ -453,6 +481,9 @@ fun HomeScreen(
                 }
             }
 
+            /*
+             * Add something to the user's canvas.
+             */
             if (
                 overlayState ==
                     LauncherOverlayState.ADD_MENU
@@ -487,14 +518,18 @@ fun HomeScreen(
                         overlayState =
                             LauncherOverlayState.NONE
                         onAddWidget()
+                        editMode = true
                     }
                 )
             }
 
+            /*
+             * Edit/remove a placed canvas item.
+             */
             if (
                 overlayState ==
                     LauncherOverlayState.ITEM_MENU &&
-                selectedItem != null
+                    selectedItem != null
             ) {
                 ItemEditorSheet(
                     item = selectedItem!!,
@@ -506,13 +541,10 @@ fun HomeScreen(
                     },
 
                     onRemove = {
-                        val item =
-                            selectedItem
+                        val item = selectedItem
 
                         if (item != null) {
-                            homeViewModel.removeHomeItem(
-                                item.id
-                            )
+                            homeViewModel.removeHomeItem(item.id)
 
                             if (
                                 item.type ==
@@ -543,13 +575,12 @@ private fun EditAction(
     Text(
         text = text,
         color = Color.White,
-        modifier =
-            Modifier
-                .clickable(onClick = onClick)
-                .padding(
-                    horizontal = 12.dp,
-                    vertical = 8.dp
-                )
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = 12.dp,
+                vertical = 8.dp
+            )
     )
 }
 
@@ -570,13 +601,12 @@ private fun AddHomeItemSheet(
             )
     ) {
         Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(
-                        rememberScrollState()
-                    )
-                    .padding(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(
+                    rememberScrollState()
+                )
+                .padding(24.dp),
             verticalArrangement =
                 Arrangement.spacedBy(8.dp)
         ) {
@@ -586,6 +616,15 @@ private fun AddHomeItemSheet(
             AddOption("Widget", onAddWidget)
             AddOption("Clock", onAddClock)
             AddOption("Now Bar", onAddNowBar)
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            Text(
+                text =
+                    "Home is yours. Nothing is added automatically."
+            )
         }
     }
 }
@@ -597,11 +636,10 @@ private fun AddOption(
 ) {
     Text(
         text = text,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp)
     )
 }
 
@@ -616,10 +654,9 @@ private fun ItemEditorSheet(
         onDismissRequest = onDismiss
     ) {
         Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
             verticalArrangement =
                 Arrangement.spacedBy(12.dp)
         ) {
@@ -634,22 +671,23 @@ private fun ItemEditorSheet(
             )
 
             Text(
-                text = "Position: ${item.x}, ${item.y}"
+                text =
+                    "Position: ${item.x}, ${item.y}"
             )
 
             Text(
-                text = "Size: ${item.width} × ${item.height}"
+                text =
+                    "Size: ${item.width} × ${item.height}"
             )
 
             Text(
                 text = "Remove",
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            onClick = onRemove
-                        )
-                        .padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        onClick = onRemove
+                    )
+                    .padding(16.dp)
             )
         }
     }

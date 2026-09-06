@@ -103,6 +103,8 @@ class HomeLayoutRepository(
             // Existing persisted items count as an initialized canvas.
             setItems(current)
         }
+
+        dataStore.setHomeInitialized(true)
     }
 
     fun newItemId(prefix: String): String {

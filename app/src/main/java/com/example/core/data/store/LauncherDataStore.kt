@@ -141,6 +141,11 @@ class LauncherDataStore(
             )
         }
 
+    val homeInitialized: Flow<Boolean> =
+        dataStore.data.safePreferences().map { preferences ->
+            preferences[Keys.homeInitialized] ?: false
+        }
+
     suspend fun setActiveProfile(profile: LauncherProfile) {
         dataStore.edit { preferences ->
             preferences[Keys.activeProfile] = profile.name
@@ -228,6 +233,12 @@ class LauncherDataStore(
     suspend fun setAppUsageJson(json: String) {
         dataStore.edit { preferences ->
             preferences[Keys.appUsageJson] = json
+        }
+    }
+
+    suspend fun setHomeInitialized(initialized: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[Keys.homeInitialized] = initialized
         }
     }
 

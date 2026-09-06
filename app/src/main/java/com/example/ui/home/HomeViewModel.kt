@@ -1,6 +1,5 @@
 package com.example.ui.home
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -71,28 +70,51 @@ class HomeViewModel(
     private val homeItems =
         homeLayoutRepository.items
 
+    /*
+     * Keep the combination type-safe.
+     *
+     * Kotlin's large-arity combine overload can fall back to the
+     * vararg Array<Any> overload in this project, which destroys
+     * the concrete types of the values. Nested combines avoid that.
+     */
+    private val appearanceState =
+        combine(
+            wallpaper,
+            iconShapeFlow,
+            iconLabels
+        ) { wallpaperPreset, iconShape, showIconLabels ->
+            AppearanceState(
+                wallpaperPreset = wallpaperPreset,
+                iconShape = iconShape,
+                showIconLabels = showIconLabels
+            )
+        }
+
+    private val contentState =
+        combine(
+            tasks,
+            homeItems
+        ) { taskList, items ->
+            ContentState(
+                tasks = taskList,
+                homeItems = items
+            )
+        }
+
     val uiState: StateFlow<HomeUiState> =
         combine(
             profile,
-            wallpaper,
-            iconShapeFlow,
-            iconLabels,
-            tasks,
-            homeItems
-        ) { activeProfile,
-            wallpaperPreset,
-            iconShape,
-            showIconLabels,
-            taskList,
-            items ->
+            appearanceState,
+            contentState
+        ) { activeProfile, appearance, content ->
 
             HomeUiState(
                 activeProfile = activeProfile,
-                wallpaperPreset = wallpaperPreset,
-                iconShape = iconShape,
-                showIconLabels = showIconLabels,
-                tasks = taskList,
-                homeItems = items
+                wallpaperPreset = appearance.wallpaperPreset,
+                iconShape = appearance.iconShape,
+                showIconLabels = appearance.showIconLabels,
+                tasks = content.tasks,
+                homeItems = content.homeItems
             )
         }.stateIn(
             scope = viewModelScope,
@@ -112,76 +134,38 @@ class HomeViewModel(
         }
     }
 
-    fun setProfile(
-        profile: LauncherProfile
-    ) {
+    fun setProfile(profile: LauncherProfile) {
         viewModelScope.launch {
             dependencies.profileRepository.setProfile(profile)
         }
     }
 
-    fun toggleAppPin(
-        componentName: String
-    ) {
+    fun toggleAppPin(componentName: String) {
         viewModelScope.launch {
-            contentRepository.toggleAppPin(componentName)
-            appManager.loadInstalledApps()
+            val pinned =
+                dependencies.profileRepository.pinnedApps.first()
+
+            if (componentName in pinned) {
+                dependencies.profileRepository.unpinApp(componentName)
+            } else {
+                dependencies.profileRepository.pinApp(componentName)
+            }
         }
     }
 
-    fun addTask(
-        text: String
-    ) {
-        viewModelScope.launch {
-            contentRepository.addTask(text)
-        }
-    }
-
-    fun toggleTask(
-        id: String
-    ) {
-        viewModelScope.launch {
-            contentRepository.toggleTask(id)
-        }
-    }
-
-    fun removeTask(
-        id: String
-    ) {
-        viewModelScope.launch {
-            contentRepository.removeTask(id)
-        }
-    }
-
-    fun launchApp(
-        context: Context,
-        app: AppItem
-    ) {
-        appManager.launchApp(
-            context,
-            app
-        )
-    }
-
-    fun addHomeItem(
-        item: HomeItem
-    ) {
+    fun addHomeItem(item: HomeItem) {
         viewModelScope.launch {
             homeLayoutRepository.addItem(item)
         }
     }
 
-    fun removeHomeItem(
-        itemId: String
-    ) {
+    fun removeHomeItem(itemId: String) {
         viewModelScope.launch {
             homeLayoutRepository.removeItem(itemId)
         }
     }
 
-    fun updateHomeItem(
-        item: HomeItem
-    ) {
+    fun updateHomeItem(item: HomeItem) {
         viewModelScope.launch {
             homeLayoutRepository.updateItem(item)
         }
@@ -203,78 +187,78 @@ class HomeViewModel(
         }
     }
 
-    fun addAppToHome(
-        app: AppItem
-    ) {
-        val item =
-            HomeItem(
-                id =
-                    homeLayoutRepository.newItemId(
-                        "app"
-                    ),
-                type = HomeItemType.APP,
-                page = 0,
-                x = 0,
-                y = 0,
-                width = 1,
-                height = 1,
-                packageName = app.packageName,
-                activityName = app.activityName,
-                title = app.label
-            )
+    fun addAppToHome(app: AppItem) {
+        viewModelScope.launch {
+            val id = homeLayoutRepository.newItemId("app")
 
-        addHomeItem(item)
+            homeLayoutRepository.addItem(
+                HomeItem(
+                    id = id,
+                    type = HomeItemType.APP,
+                    page = 0,
+                    x = 0,
+                    y = 0,
+                    width = 1,
+                    height = 1,
+                    packageName = app.packageName,
+                    activityName = app.activityName,
+                    title = app.label
+                )
+            )
+        }
     }
 
     fun addClockToHome() {
-        val item =
-            HomeItem(
-                id =
-                    homeLayoutRepository.newItemId(
-                        "clock"
-                    ),
-                type = HomeItemType.CLOCK,
-                page = 0,
-                x = 2,
-                y = 1,
-                width = 2,
-                height = 1
-            )
+        viewModelScope.launch {
+            val current = homeLayoutRepository.items.first()
 
-        addHomeItem(item)
+            if (current.any { it.type == HomeItemType.CLOCK }) return@launch
+
+            homeLayoutRepository.addItem(
+                HomeItem(
+                    id = homeLayoutRepository.newItemId("clock"),
+                    type = HomeItemType.CLOCK,
+                    page = 0,
+                    x = 2,
+                    y = 1,
+                    width = 2,
+                    height = 1
+                )
+            )
+        }
     }
 
     fun addNowBarToHome() {
-        val item =
-            HomeItem(
-                id =
-                    homeLayoutRepository.newItemId(
-                        "nowbar"
-                    ),
-                type = HomeItemType.NOW_BAR,
-                page = 0,
-                x = 0,
-                y = 7,
-                width = 5,
-                height = 1
-            )
+        viewModelScope.launch {
+            val current = homeLayoutRepository.items.first()
 
-        addHomeItem(item)
+            if (current.any { it.type == HomeItemType.NOW_BAR }) return@launch
+
+            homeLayoutRepository.addItem(
+                HomeItem(
+                    id = homeLayoutRepository.newItemId("nowbar"),
+                    type = HomeItemType.NOW_BAR,
+                    page = 0,
+                    x = 0,
+                    y = 7,
+                    width = 5,
+                    height = 1
+                )
+            )
+        }
     }
 
-    fun removeWidget(
-        appWidgetId: Int
-    ) {
+    fun removeWidget(appWidgetId: Int) {
         viewModelScope.launch {
-            dependencies.widgetManager.removeWidget(
-                appWidgetId
-            )
+            dependencies.widgetManager.removeWidget(appWidgetId)
 
-            homeLayoutRepository
-                .items
-                .first()
+            val current =
+                homeLayoutRepository.items.first()
+
+            current
                 .filter {
-                    it.appWidgetId == appWidgetId
+                    it.type == HomeItemType.WIDGET &&
+                        it.appWidgetId == appWidgetId
                 }
                 .forEach {
                     homeLayoutRepository.removeItem(it.id)
@@ -282,9 +266,16 @@ class HomeViewModel(
         }
     }
 
-    fun refreshApps() {
-        appManager.loadInstalledApps()
-    }
+    private data class AppearanceState(
+        val wallpaperPreset: WallpaperPreset,
+        val iconShape: IconShape,
+        val showIconLabels: Boolean
+    )
+
+    private data class ContentState(
+        val tasks: List<LauncherTask>,
+        val homeItems: List<HomeItem>
+    )
 }
 
 class HomeViewModelFactory(
@@ -295,15 +286,8 @@ class HomeViewModelFactory(
     override fun <T : ViewModel> create(
         modelClass: Class<T>
     ): T {
-
-        if (
-            modelClass.isAssignableFrom(
-                HomeViewModel::class.java
-            )
-        ) {
-            return HomeViewModel(
-                dependencies
-            ) as T
+        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+            return HomeViewModel(dependencies) as T
         }
 
         throw IllegalArgumentException(

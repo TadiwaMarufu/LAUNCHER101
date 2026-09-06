@@ -1,12 +1,11 @@
 package com.example.ui.home
 
-import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -20,15 +19,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.core.LauncherDependencies
+import com.example.core.engine.ProfileConfig
 import com.example.core.model.AppItem
 import com.example.core.model.HomeItem
 import com.example.core.model.HomeItemType
 import com.example.core.model.IconShape
+import com.example.core.model.LauncherProfile
+import com.example.core.model.MediaPlaybackState
+import com.example.core.model.NowBarItem
 import com.example.core.nowbar.NowBarController
 import com.example.core.widgets.AndroidAppWidgetHostView
 import com.example.ui.drawer.AppIconImage
@@ -39,6 +41,15 @@ import kotlin.math.roundToInt
 private const val GRID_COLUMNS = 5
 private const val GRID_ROWS = 8
 
+/**
+ * User-owned launcher canvas.
+ *
+ * The canvas deliberately contains no hard-coded home components.
+ * Everything visible on the home screen must exist as a HomeItem.
+ *
+ * Profiles influence presentation through the ProfileConfig supplied
+ * by the parent, but profiles do not inject content into the canvas.
+ */
 @Composable
 fun HomeCanvas(
     items: List<HomeItem>,
@@ -46,6 +57,8 @@ fun HomeCanvas(
     iconShape: IconShape,
     showIconLabels: Boolean,
     nowBarController: NowBarController,
+    profile: LauncherProfile,
+    config: ProfileConfig,
     modifier: Modifier = Modifier,
     editMode: Boolean = false,
     onEmptyTap: () -> Unit = {},
@@ -53,15 +66,21 @@ fun HomeCanvas(
     onItemClick: (HomeItem) -> Unit = {},
     onItemLongPress: (HomeItem) -> Unit = {},
     onItemMove: (HomeItem, Int, Int) -> Unit = {},
-    onLaunchApp: (AppItem) -> Unit = {}
+    onLaunchApp: (AppItem) -> Unit = {},
+    onProfileChipClick: () -> Unit = {},
+    onMediaPlayToggle: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
+    onDrawerClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-
     val dependencies = remember {
-        LauncherDependencies.get(context)
+        LauncherDependencies.get()
     }
 
     val widgetManager = dependencies.widgetManager
+
+    val nowBarItems = nowBarController.items.value
+    val mediaState = nowBarController.mediaState.value
 
     BoxWithConstraints(
         modifier = modifier
@@ -83,22 +102,28 @@ fun HomeCanvas(
         val cellHeight = maxHeight / GRID_ROWS
 
         items
-            .filter {
-                it.visible && it.page == 0
-            }
+            .asSequence()
+            .filter { it.visible && it.page == 0 }
             .forEach { item ->
 
-                val itemWidth =
-                    cellWidth * item.width
+                val safeWidth = item.width.coerceAtLeast(1)
+                val safeHeight = item.height.coerceAtLeast(1)
 
-                val itemHeight =
-                    cellHeight * item.height
+                val itemWidth = cellWidth * safeWidth
+                val itemHeight = cellHeight * safeHeight
 
-                val xOffset =
-                    cellWidth * item.x
+                val x = item.x.coerceIn(
+                    0,
+                    (GRID_COLUMNS - safeWidth).coerceAtLeast(0)
+                )
 
-                val yOffset =
-                    cellHeight * item.y
+                val y = item.y.coerceIn(
+                    0,
+                    (GRID_ROWS - safeHeight).coerceAtLeast(0)
+                )
+
+                val xOffset = cellWidth * x
+                val yOffset = cellHeight * y
 
                 Box(
                     modifier = Modifier
@@ -118,17 +143,13 @@ fun HomeCanvas(
                         .then(
                             if (editMode) {
                                 Modifier.background(
-                                    Color.Black.copy(
-                                        alpha = 0.07f
-                                    )
+                                    Color.Black.copy(alpha = 0.07f)
                                 )
                             } else {
                                 Modifier
                             }
                         )
-                        .pointerInput(
-                            item.id
-                        ) {
+                        .pointerInput(item.id) {
                             detectTapGestures(
                                 onTap = {
                                     onItemClick(item)
@@ -140,9 +161,7 @@ fun HomeCanvas(
                         }
                         .then(
                             if (editMode) {
-                                Modifier.pointerInput(
-                                    item.id + "-drag"
-                                ) {
+                                Modifier.pointerInput(item.id + "-drag") {
                                     detectDragGestures(
                                         onDrag = { change, dragAmount ->
                                             change.consume()
@@ -150,15 +169,13 @@ fun HomeCanvas(
                                             val columnsMoved =
                                                 (
                                                     dragAmount.x /
-                                                        cellWidth
-                                                            .toPx()
+                                                        cellWidth.toPx()
                                                     ).roundToInt()
 
                                             val rowsMoved =
                                                 (
                                                     dragAmount.y /
-                                                        cellHeight
-                                                            .toPx()
+                                                        cellHeight.toPx()
                                                     ).roundToInt()
 
                                             if (
@@ -172,16 +189,20 @@ fun HomeCanvas(
                                                             columnsMoved
                                                     ).coerceIn(
                                                         0,
-                                                        GRID_COLUMNS -
-                                                            item.width
+                                                        (
+                                                            GRID_COLUMNS -
+                                                                safeWidth
+                                                        ).coerceAtLeast(0)
                                                     ),
                                                     (
                                                         item.y +
                                                             rowsMoved
                                                     ).coerceIn(
                                                         0,
-                                                        GRID_ROWS -
-                                                            item.height
+                                                        (
+                                                            GRID_ROWS -
+                                                                safeHeight
+                                                        ).coerceAtLeast(0)
                                                     )
                                                 )
                                             }
@@ -191,41 +212,56 @@ fun HomeCanvas(
                             } else {
                                 Modifier
                             }
-                        )
+                        }
                 ) {
                     when (item.type) {
 
                         HomeItemType.CLOCK -> {
                             PersonalityClockWidget(
-                                modifier =
-                                    Modifier.fillMaxSize()
+                                config = config,
+                                modifier = Modifier.fillMaxSize(),
+                                onClockClick = {
+                                    onItemClick(item)
+                                }
                             )
                         }
 
                         HomeItemType.NOW_BAR -> {
                             NowBarView(
-                                controller =
-                                    nowBarController,
-                                modifier =
-                                    Modifier.fillMaxSize()
+                                items = nowBarItems,
+                                mediaState = mediaState,
+                                profile = profile,
+                                config = config,
+                                onProfileChipClick = onProfileChipClick,
+                                onMediaPlayToggle = onMediaPlayToggle,
+                                onSearchClick = onSearchClick,
+                                onDrawerClick = onDrawerClick,
+                                onSettingsClick = onSettingsClick,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 
                         HomeItemType.APP -> {
-                            val app =
-                                allApps.firstOrNull {
-                                    it.componentNameString ==
-                                        "${item.packageName}/${item.activityName}"
+                            val componentName =
+                                if (
+                                    !item.packageName.isNullOrBlank() &&
+                                    !item.activityName.isNullOrBlank()
+                                ) {
+                                    "${item.packageName}/${item.activityName}"
+                                } else {
+                                    null
                                 }
+
+                            val app = allApps.firstOrNull {
+                                it.componentNameString == componentName
+                            }
 
                             if (app != null) {
                                 Box(
-                                    modifier =
-                                        Modifier.fillMaxSize(),
-                                    contentAlignment =
-                                        Alignment.Center
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    androidx.compose.foundation.layout.Column(
+                                    Column(
                                         horizontalAlignment =
                                             Alignment.CenterHorizontally
                                     ) {
@@ -233,14 +269,18 @@ fun HomeCanvas(
                                             drawable = app.icon,
                                             label = app.label,
                                             iconShape = iconShape,
-                                            size = 48.dp
+                                            size = 48.dp,
+                                            accentColor =
+                                                profile.primaryAccent
                                         )
 
                                         if (showIconLabels) {
                                             Text(
                                                 text = app.label,
                                                 textAlign =
-                                                    TextAlign.Center
+                                                    TextAlign.Center,
+                                                color =
+                                                    profile.textPrimary
                                             )
                                         }
                                     }
@@ -249,55 +289,46 @@ fun HomeCanvas(
                         }
 
                         HomeItemType.WIDGET -> {
-                            val appWidgetId =
-                                item.appWidgetId
+                            val appWidgetId = item.appWidgetId
 
                             if (appWidgetId != null) {
                                 AndroidAppWidgetHostView(
-                                    appWidgetHost =
-                                        widgetManager.host,
+                                    appWidgetHost = widgetManager.host,
                                     appWidgetManager =
                                         widgetManager.appWidgetManager,
-                                    appWidgetId =
-                                        appWidgetId,
-                                    modifier =
-                                        Modifier.fillMaxSize()
+                                    appWidgetId = appWidgetId,
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
                         }
 
-                        HomeItemType.SHORTCUT,
-                        HomeItemType.FOLDER -> {
+                        HomeItemType.SHORTCUT -> {
                             Box(
-                                modifier =
-                                    Modifier.fillMaxSize(),
-                                contentAlignment =
-                                    Alignment.Center
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text =
-                                        item.title
-                                            ?: item.type.name
-                                                .lowercase()
-                                                .replaceFirstChar {
-                                                    it.uppercase()
-                                                }
+                                    text = item.title ?: "Shortcut",
+                                    color = profile.textPrimary,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+
+                        HomeItemType.FOLDER -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item.title ?: "Folder",
+                                    color = profile.textPrimary,
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
                     }
                 }
             }
-    }
-}
-
-private fun Modifier.thenIf(
-    condition: Boolean,
-    modifier: Modifier
-): Modifier {
-    return if (condition) {
-        this.then(modifier)
-    } else {
-        this
     }
 }
