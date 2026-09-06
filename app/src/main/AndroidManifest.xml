@@ -57,6 +57,9 @@
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_CHANGED" />
+                <action android:name="android.intent.action.PACKAGE_ENABLED" />
+                <action android:name="android.intent.action.PACKAGE_DISABLED" />
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>

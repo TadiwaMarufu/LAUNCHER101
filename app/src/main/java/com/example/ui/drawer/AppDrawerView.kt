@@ -107,6 +107,9 @@ fun AppIconImage(
 fun AppDrawerView(
     allApps: List<AppItem>,
     categorizedApps: Map<AppCategory, List<AppItem>>,
+    recentlyLaunched: List<AppItem> = emptyList(),
+    frequentlyLaunched: List<AppItem> = emptyList(),
+    usageTrackingEnabled: Boolean = false,
     profile: LauncherProfile,
     config: ProfileConfig,
     iconShape: IconShape,
@@ -266,6 +269,126 @@ fun AppDrawerView(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
+
+        // Contextual usage row.
+        // Recent/Frequent are behavioral collections, not app categories.
+        // They only appear on the All view when local usage tracking is enabled.
+        if (
+            searchQuery.isBlank() &&
+            selectedCategory == AppCategory.ALL &&
+            usageTrackingEnabled &&
+            (recentlyLaunched.isNotEmpty() || frequentlyLaunched.isNotEmpty())
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                if (recentlyLaunched.isNotEmpty()) {
+                    Text(
+                        text = "Recent",
+                        color = profile.textPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        recentlyLaunched.take(6).forEach { app ->
+                            Column(
+                                modifier = Modifier
+                                    .width(64.dp)
+                                    .combinedClickable(
+                                        onClick = { onAppClick(app) },
+                                        onLongClick = { onAppLongClick(app) }
+                                    ),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AppIconImage(
+                                    drawable = app.icon,
+                                    label = app.label,
+                                    iconShape = iconShape,
+                                    size = 48.dp,
+                                    accentColor = profile.primaryAccent
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = app.label,
+                                    color = profile.textSecondary,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    if (frequentlyLaunched.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                    }
+                }
+
+                if (frequentlyLaunched.isNotEmpty()) {
+                    Text(
+                        text = "Frequent",
+                        color = profile.textPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        frequentlyLaunched.take(6).forEach { app ->
+                            Column(
+                                modifier = Modifier
+                                    .width(64.dp)
+                                    .combinedClickable(
+                                        onClick = { onAppClick(app) },
+                                        onLongClick = { onAppLongClick(app) }
+                                    ),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AppIconImage(
+                                    drawable = app.icon,
+                                    label = app.label,
+                                    iconShape = iconShape,
+                                    size = 48.dp,
+                                    accentColor = profile.primaryAccent
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = app.label,
+                                    color = profile.textSecondary,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
 
         // Grid of Apps
         if (displayedApps.isEmpty()) {
