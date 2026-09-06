@@ -92,8 +92,6 @@ fun HomeScreen(
         .placedWidgets
         .collectAsState(initial = emptyList())
 
-    }
-
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(dependencies)
     )

@@ -102,20 +102,16 @@ class WidgetManager(
     }
 
     /**
-     * Check whether the launcher is allowed to bind this provider.
+     * Bind a widget provider when Android allows the launcher to do so.
      */
     fun bindWidgetIfAllowed(
         appWidgetId: Int,
         provider: ComponentName
     ): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            appWidgetManager.bindAppWidgetIdIfAllowed(
-                appWidgetId,
-                provider
-            )
-        } else {
-            true
-        }
+        return appWidgetManager.bindAppWidgetIdIfAllowed(
+            appWidgetId,
+            provider
+        )
     }
 
     /**
