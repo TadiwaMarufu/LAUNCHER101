@@ -73,6 +73,13 @@ class SearchEngine(
             SupervisorJob() + Dispatchers.Main.immediate
         )
 
+    fun launchApp(
+        context: Context,
+        app: AppItem
+    ) {
+        appManager.launchApp(context, app)
+    }
+
     fun executeSearch(
         rawQuery: String
     ): List<SearchResultItem> {

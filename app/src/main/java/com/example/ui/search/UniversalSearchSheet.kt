@@ -177,7 +177,7 @@ fun UniversalSearchSheet(
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(profile.surfaceBase.copy(alpha = 0.6f))
                                 .clickable {
-                                    appManager.launchApp(context, item.app)
+                                    searchEngine.launchApp(context, item.app)
                                     onClose()
                                 }
                                 .padding(12.dp),

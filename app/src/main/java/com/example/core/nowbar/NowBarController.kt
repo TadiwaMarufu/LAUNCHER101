@@ -207,6 +207,26 @@ class NowBarController private constructor(
         recomputeItems()
     }
 
+    fun togglePlayPause() {
+        toggleMediaPlayback()
+    }
+
+    fun nextTrack() {
+        /*
+         * Track navigation is provider-dependent. The v0.1 controller
+         * intentionally does not fabricate a media queue. If a future
+         * media provider supplies queue information, this method becomes
+         * the single controller boundary for advancing the queue.
+         */
+        if (_mediaState.value.title.isBlank()) return
+
+        _mediaState.value = _mediaState.value.copy(
+            progress = 0f
+        )
+
+        recomputeItems()
+    }
+
     fun toggleMediaPlayback() {
         if (_mediaState.value.title.isBlank()) return
 
