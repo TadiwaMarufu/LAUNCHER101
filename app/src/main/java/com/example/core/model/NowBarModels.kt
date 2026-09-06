@@ -1,18 +1,13 @@
 package com.example.core.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.BatteryStd
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * Supported item types on the Now Bar.
+ *
+ * The Now Bar is the launcher's primary interaction surface.
+ * Providers can add contextual items without coupling the UI to
+ * individual Android system services.
  */
 enum class NowBarType {
     PROFILE_CHIP,
@@ -26,7 +21,7 @@ enum class NowBarType {
 }
 
 /**
- * Individual item presentable in the Now Bar.
+ * Individual item presented by the Now Bar.
  */
 data class NowBarItem(
     val id: String,
@@ -35,32 +30,36 @@ data class NowBarItem(
     val subtitle: String? = null,
     val icon: ImageVector,
     val priority: Int = 0,
-    val isPinned: Boolean = true,
+    val isPinned: Boolean = false,
     val isEnabled: Boolean = true,
     val data: Any? = null
 )
 
 /**
- * Media playback state for Now Bar media card.
+ * Real media playback state.
+ *
+ * Empty title/artist means no active media session is currently
+ * supplying information. The launcher must never manufacture
+ * playback information.
  */
 data class MediaPlaybackState(
     val isPlaying: Boolean = false,
-    val title: String = "Violet Waves",
-    val artist: String = "Purple Audio Lab",
-    val progress: Float = 0.42f
+    val title: String = "",
+    val artist: String = "",
+    val progress: Float = 0f
 )
 
 /**
- * Battery information state.
+ * Battery information exposed to launcher surfaces.
  */
 data class BatteryInfoState(
-    val percentage: Int = 85,
+    val percentage: Int = 0,
     val isCharging: Boolean = false,
-    val healthText: String = "Good"
+    val healthText: String = "Unknown"
 )
 
 /**
- * Focus task item model for Focus profile and launcher widgets.
+ * Focus task item model.
  */
 data class LauncherTask(
     val id: String,

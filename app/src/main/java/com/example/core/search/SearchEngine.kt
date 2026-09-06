@@ -18,9 +18,14 @@ import com.example.core.apps.AppManager
 import com.example.core.data.repository.ProfileRepository
 import com.example.core.model.AppItem
 import com.example.core.model.LauncherProfile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 sealed class SearchResultItem {
+
     abstract val title: String
     abstract val subtitle: String
     abstract val icon: ImageVector
@@ -43,48 +48,93 @@ sealed class SearchResultItem {
 /**
  * Local-first universal launcher search.
  *
- * Search is intentionally lightweight in v0.1:
- * - installed apps
+ * Supported v0.1 sources:
+ * - installed applications
  * - launcher personalities
- * - Android system settings
+ * - Android settings
  * - timer commands
  * - calculator expressions
- * - web fallback
- *
- * Persistence is owned by repositories rather than the search layer.
+ * - explicit web fallback
  */
 class SearchEngine(
     context: Context,
     private val profileRepository: ProfileRepository =
-        LauncherDependencies.get(context).profileRepository,
+        LauncherDependencies
+            .get(context)
+            .profileRepository,
     private val appManager: AppManager =
-        LauncherDependencies.get(context).appManager
+        LauncherDependencies
+            .get(context)
+            .appManager
 ) {
 
-    fun executeSearch(rawQuery: String): List<SearchResultItem> {
-        val trimmedQuery = rawQuery.trim()
+    private val commandScope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.Main.immediate
+        )
+
+    fun launchApp(
+        context: Context,
+        app: AppItem
+    ) {
+        appManager.launchApp(context, app)
+    }
+
+    fun executeSearch(
+        rawQuery: String
+    ): List<SearchResultItem> {
+
+        val trimmedQuery =
+            rawQuery.trim()
 
         if (trimmedQuery.isEmpty()) {
             return getSuggestions()
         }
 
-        val query = trimmedQuery.lowercase(Locale.getDefault())
-        val results = mutableListOf<SearchResultItem>()
+        val query =
+            trimmedQuery.lowercase(
+                Locale.getDefault()
+            )
 
-        addProfileCommands(query, results)
-        addTimerCommand(query, results)
-        addSettingsCommand(query, results)
-        addCalculatorResult(query, results)
-        addAppResults(query, results)
+        val results =
+            mutableListOf<SearchResultItem>()
 
-        // Always provide a web fallback for unresolved natural-language queries.
+        addProfileCommands(
+            query,
+            results
+        )
+
+        addTimerCommand(
+            query,
+            results
+        )
+
+        addSettingsCommand(
+            query,
+            results
+        )
+
+        addCalculatorResult(
+            query,
+            results
+        )
+
+        addAppResults(
+            query,
+            results
+        )
+
         results.add(
             SearchResultItem.CommandResult(
-                title = "Search \"$trimmedQuery\" on Google",
+                title =
+                    "Search \"$trimmedQuery\" on Google",
                 subtitle = "Web Search",
                 icon = Icons.Rounded.Language,
                 onExecute = { context ->
-                    openWebSearch(context, trimmedQuery)
+                    openWebSearch(
+                        context,
+                        trimmedQuery
+                    )
                 }
             )
         )
@@ -96,8 +146,11 @@ class SearchEngine(
         query: String,
         results: MutableList<SearchResultItem>
     ) {
-        for (profile in LauncherProfile.values()) {
-            val name = profile.name.lowercase(Locale.getDefault())
+        for (profile in LauncherProfile.entries) {
+            val name =
+                profile.name.lowercase(
+                    Locale.getDefault()
+                )
 
             if (
                 query == name ||
@@ -106,11 +159,17 @@ class SearchEngine(
             ) {
                 results.add(
                     SearchResultItem.CommandResult(
-                        title = "Switch to ${profile.title} Personality",
-                        subtitle = profile.tagline,
-                        icon = Icons.Rounded.Palette,
+                        title =
+                            "Switch to ${profile.title} Personality",
+                        subtitle =
+                            profile.tagline,
+                        icon =
+                            Icons.Rounded.Palette,
                         onExecute = {
-                            profileRepository.setProfile(profile)
+                            commandScope.launch {
+                                profileRepository
+                                    .setProfile(profile)
+                            }
                         }
                     )
                 )
@@ -122,77 +181,108 @@ class SearchEngine(
         query: String,
         results: MutableList<SearchResultItem>
     ) {
-        val minutes = parseTimerMinutes(query) ?: return
+        val minutes =
+            parseTimerMinutes(query)
+                ?: return
 
         results.add(
             SearchResultItem.CommandResult(
-                title = "Set $minutes-Minute Timer",
-                subtitle = "System Clock Action",
-                icon = Icons.Rounded.Timer,
+                title =
+                    "Set $minutes-Minute Timer",
+                subtitle =
+                    "System Clock Action",
+                icon =
+                    Icons.Rounded.Timer,
                 onExecute = { context ->
-                    openTimer(context, minutes)
+                    openTimer(
+                        context,
+                        minutes
+                    )
                 }
             )
         )
     }
 
-    private fun parseTimerMinutes(query: String): Int? {
-        val match = Regex(
-            """^(?:timer|t)\s+(\d+)\s*(?:m|min|mins|minute|minutes)?$"""
-        ).find(query) ?: return null
+    private fun parseTimerMinutes(
+        query: String
+    ): Int? {
+        val match =
+            Regex(
+                """^(?:timer|t)\s+(\d+)\s*(?:m|min|mins|minute|minutes)?$"""
+            ).find(query)
+                ?: return null
 
-        return match.groupValues[1]
+        return match
+            .groupValues[1]
             .toIntOrNull()
-            ?.takeIf { it in 1..24 * 60 }
+            ?.takeIf {
+                it in 1..24 * 60
+            }
     }
 
     private fun addSettingsCommand(
         query: String,
         results: MutableList<SearchResultItem>
     ) {
-        val command = when (query) {
-            "wifi", "wi-fi", "internet" -> {
-                SearchCommand(
-                    title = "Wi-Fi Settings",
-                    subtitle = "System Network",
-                    action = Settings.ACTION_WIFI_SETTINGS
-                )
-            }
+        val command =
+            when (query) {
 
-            "bluetooth", "bt" -> {
-                SearchCommand(
-                    title = "Bluetooth Settings",
-                    subtitle = "System Wireless",
-                    action = Settings.ACTION_BLUETOOTH_SETTINGS
-                )
-            }
+                "wifi",
+                "wi-fi",
+                "internet" ->
+                    SearchCommand(
+                        title = "Wi-Fi Settings",
+                        subtitle = "System Network",
+                        action =
+                            Settings.ACTION_WIFI_SETTINGS
+                    )
 
-            "display", "brightness", "screen" -> {
-                SearchCommand(
-                    title = "Display Settings",
-                    subtitle = "System Display & Brightness",
-                    action = Settings.ACTION_DISPLAY_SETTINGS
-                )
-            }
+                "bluetooth",
+                "bt" ->
+                    SearchCommand(
+                        title =
+                            "Bluetooth Settings",
+                        subtitle =
+                            "System Wireless",
+                        action =
+                            Settings.ACTION_BLUETOOTH_SETTINGS
+                    )
 
-            "battery", "power" -> {
-                SearchCommand(
-                    title = "Battery Settings",
-                    subtitle = "System Battery & Usage",
-                    action = Intent.ACTION_POWER_USAGE_SUMMARY
-                )
-            }
+                "display",
+                "brightness",
+                "screen" ->
+                    SearchCommand(
+                        title =
+                            "Display Settings",
+                        subtitle =
+                            "System Display & Brightness",
+                        action =
+                            Settings.ACTION_DISPLAY_SETTINGS
+                    )
 
-            "settings" -> {
-                SearchCommand(
-                    title = "System Settings",
-                    subtitle = "Open Android Settings",
-                    action = Settings.ACTION_SETTINGS
-                )
-            }
+                "battery",
+                "power" ->
+                    SearchCommand(
+                        title =
+                            "Battery Settings",
+                        subtitle =
+                            "System Battery & Usage",
+                        action =
+                            Intent.ACTION_POWER_USAGE_SUMMARY
+                    )
 
-            else -> null
-        }
+                "settings" ->
+                    SearchCommand(
+                        title =
+                            "System Settings",
+                        subtitle =
+                            "Open Android Settings",
+                        action =
+                            Settings.ACTION_SETTINGS
+                    )
+
+                else -> null
+            }
 
         command ?: return
 
@@ -202,7 +292,10 @@ class SearchEngine(
                 subtitle = command.subtitle,
                 icon = Icons.Rounded.Settings,
                 onExecute = { context ->
-                    openSettings(context, command.action)
+                    openSettings(
+                        context,
+                        command.action
+                    )
                 }
             )
         )
@@ -212,11 +305,15 @@ class SearchEngine(
         query: String,
         results: MutableList<SearchResultItem>
     ) {
-        val mathMatch = Regex(
-            """^(?:calc\s+)?([0-9.\+\-*/()\s]+)$"""
-        ).find(query) ?: return
+        val mathMatch =
+            Regex(
+                """^(?:calc\s+)?([0-9.\+\-*/()\s]+)$"""
+            ).find(query)
+                ?: return
 
-        val expression = mathMatch.groupValues[1].trim()
+        val expression =
+            mathMatch.groupValues[1]
+                .trim()
 
         if (
             !query.contains("+") &&
@@ -228,13 +325,17 @@ class SearchEngine(
             return
         }
 
-        val result = evaluateSimpleMath(expression) ?: return
+        val result =
+            evaluateSimpleMath(expression)
+                ?: return
 
         results.add(
             SearchResultItem.CommandResult(
                 title = "= $result",
-                subtitle = "Calculation: $expression",
-                icon = Icons.Rounded.Calculate,
+                subtitle =
+                    "Calculation: $expression",
+                icon =
+                    Icons.Rounded.Calculate,
                 onExecute = {}
             )
         )
@@ -244,56 +345,92 @@ class SearchEngine(
         query: String,
         results: MutableList<SearchResultItem>
     ) {
-        val matchingApps = appManager.allApps.value
-            .asSequence()
-            .filter { app ->
-                app.label.lowercase(Locale.getDefault()).contains(query) ||
-                    app.packageName.lowercase(Locale.getDefault()).contains(query)
-            }
-            .sortedWith(
-                compareByDescending<AppItem> { app ->
-                    app.label.lowercase(Locale.getDefault()) == query
-                }.thenBy {
-                    it.label.lowercase(Locale.getDefault())
+        val matchingApps =
+            appManager.allApps.value
+                .asSequence()
+                .filter { app ->
+                    app.label
+                        .lowercase(
+                            Locale.getDefault()
+                        )
+                        .contains(query) ||
+                        app.packageName
+                            .lowercase(
+                                Locale.getDefault()
+                            )
+                            .contains(query)
                 }
-            )
-            .take(8)
-            .toList()
+                .sortedWith(
+                    compareByDescending<AppItem> {
+                        it.label
+                            .lowercase(
+                                Locale.getDefault()
+                            ) == query
+                    }.thenBy {
+                        it.label
+                            .lowercase(
+                                Locale.getDefault()
+                            )
+                    }
+                )
+                .take(8)
+                .toList()
 
         matchingApps.forEach { app ->
-            results.add(SearchResultItem.AppResult(app))
+            results.add(
+                SearchResultItem.AppResult(app)
+            )
         }
     }
 
-    private fun getSuggestions(): List<SearchResultItem> {
-        val suggestions = mutableListOf<SearchResultItem>()
+    private fun getSuggestions():
+        List<SearchResultItem> {
+
+        val suggestions =
+            mutableListOf<SearchResultItem>()
 
         suggestions.add(
             SearchResultItem.CommandResult(
-                title = "Switch Personality",
-                subtitle = "Try fluid, calm, focus, premium, or expressive",
-                icon = Icons.Rounded.Palette,
+                title =
+                    "Switch Personality",
+                subtitle =
+                    "Try fluid, calm, focus, premium, or expressive",
+                icon =
+                    Icons.Rounded.Palette,
                 onExecute = {
-                    profileRepository.cycleProfile()
+                    commandScope.launch {
+                        profileRepository
+                            .cycleProfile()
+                    }
                 }
             )
         )
 
         suggestions.add(
             SearchResultItem.CommandResult(
-                title = "Start 25m Focus Timer",
-                subtitle = "Type \"timer 25m\"",
-                icon = Icons.Rounded.Timer,
+                title =
+                    "Start 25m Focus Timer",
+                subtitle =
+                    "Type \"timer 25m\"",
+                icon =
+                    Icons.Rounded.Timer,
                 onExecute = { context ->
-                    openTimer(context, 25)
+                    openTimer(
+                        context,
+                        25
+                    )
                 }
             )
         )
 
-        appManager.frequentlyLaunched.value
+        appManager
+            .frequentlyLaunched
+            .value
             .take(4)
             .forEach { app ->
-                suggestions.add(SearchResultItem.AppResult(app))
+                suggestions.add(
+                    SearchResultItem.AppResult(app)
+                )
             }
 
         return suggestions
@@ -304,30 +441,46 @@ class SearchEngine(
         minutes: Int
     ) {
         try {
-            val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
-                putExtra(AlarmClock.EXTRA_LENGTH, minutes * 60)
-                putExtra(
-                    AlarmClock.EXTRA_MESSAGE,
-                    "Purple Launcher Focus"
-                )
-                putExtra(
-                    AlarmClock.EXTRA_SKIP_UI,
-                    false
-                )
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            val intent =
+                Intent(
+                    AlarmClock.ACTION_SET_TIMER
+                ).apply {
+                    putExtra(
+                        AlarmClock.EXTRA_LENGTH,
+                        minutes * 60
+                    )
+
+                    putExtra(
+                        AlarmClock.EXTRA_MESSAGE,
+                        "Purple Launcher Focus"
+                    )
+
+                    putExtra(
+                        AlarmClock.EXTRA_SKIP_UI,
+                        false
+                    )
+
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                }
 
             context.startActivity(intent)
+
         } catch (_: Exception) {
+
             try {
                 context.startActivity(
-                    Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    Intent(
+                        AlarmClock.ACTION_SHOW_ALARMS
+                    ).apply {
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
                     }
                 )
             } catch (_: Exception) {
-                // Unsupported clock implementation.
-                // Search must never crash the launcher.
+                // Unsupported clock provider.
             }
         }
     }
@@ -339,18 +492,25 @@ class SearchEngine(
         try {
             context.startActivity(
                 Intent(action).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
                 }
             )
         } catch (_: Exception) {
+
             try {
                 context.startActivity(
-                    Intent(Settings.ACTION_SETTINGS).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    Intent(
+                        Settings.ACTION_SETTINGS
+                    ).apply {
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
                     }
                 )
             } catch (_: Exception) {
-                // Settings provider unavailable.
+                // Settings unavailable.
             }
         }
     }
@@ -360,29 +520,39 @@ class SearchEngine(
         query: String
     ) {
         try {
-            val intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(
-                    "https://www.google.com/search?q=${Uri.encode(query)}"
-                )
-            ).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            val intent =
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(
+                        "https://www.google.com/search?q=${Uri.encode(query)}"
+                    )
+                ).apply {
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                }
 
             context.startActivity(intent)
         } catch (_: Exception) {
-            // No browser available.
+            // Browser unavailable.
         }
     }
 
-    private fun evaluateSimpleMath(expr: String): String? {
+    private fun evaluateSimpleMath(
+        expr: String
+    ): String? {
         return try {
-            val clean = expr.replace(" ", "")
+            val clean =
+                expr.replace(" ", "")
 
             when {
                 "+" in clean -> {
-                    val parts = clean.split("+")
-                    if (parts.size != 2) return null
+                    val parts =
+                        clean.split("+")
+
+                    if (parts.size != 2) {
+                        return null
+                    }
 
                     (
                         parts[0].toDouble() +
@@ -391,8 +561,12 @@ class SearchEngine(
                 }
 
                 "*" in clean -> {
-                    val parts = clean.split("*")
-                    if (parts.size != 2) return null
+                    val parts =
+                        clean.split("*")
+
+                    if (parts.size != 2) {
+                        return null
+                    }
 
                     (
                         parts[0].toDouble() *
@@ -401,10 +575,15 @@ class SearchEngine(
                 }
 
                 "/" in clean -> {
-                    val parts = clean.split("/")
-                    if (parts.size != 2) return null
+                    val parts =
+                        clean.split("/")
 
-                    val denominator = parts[1].toDouble()
+                    if (parts.size != 2) {
+                        return null
+                    }
+
+                    val denominator =
+                        parts[1].toDouble()
 
                     if (denominator == 0.0) {
                         "Cannot divide by 0"
@@ -417,8 +596,12 @@ class SearchEngine(
                 }
 
                 "-" in clean -> {
-                    val parts = clean.split("-")
-                    if (parts.size != 2) return null
+                    val parts =
+                        clean.split("-")
+
+                    if (parts.size != 2) {
+                        return null
+                    }
 
                     (
                         parts[0].toDouble() -
@@ -433,8 +616,10 @@ class SearchEngine(
         }
     }
 
-    private fun Double.formatNumber(): String {
-        return toString().removeSuffix(".0")
+    private fun Double.formatNumber():
+        String {
+        return toString()
+            .removeSuffix(".0")
     }
 
     private data class SearchCommand(
