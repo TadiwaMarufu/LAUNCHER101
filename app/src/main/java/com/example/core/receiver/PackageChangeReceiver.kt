@@ -7,26 +7,33 @@ import android.util.Log
 import com.example.core.LauncherDependencies
 
 /**
- * Keeps the launcher's installed-app model synchronized with Android.
+ * Keeps the installed-app model synchronized with Android.
  *
- * The receiver does not own AppManager or persistence. It resolves the
- * shared launcher dependency graph so package events update the same
- * AppManager instance used by the UI.
+ * Package add/remove/replace/change events are public Android intents.
+ * Enabled/disabled package broadcasts are represented by their Android
+ * action strings because the SDK does not expose public constants for them.
  */
 class PackageChangeReceiver : BroadcastReceiver() {
 
-    override fun onReceive(context: Context, intent: Intent?) {
-        val action = intent?.action ?: return
+    override fun onReceive(
+        context: Context,
+        intent: Intent?
+    ) {
+        val action =
+            intent?.action
+                ?: return
 
         when (action) {
             Intent.ACTION_PACKAGE_ADDED,
             Intent.ACTION_PACKAGE_REMOVED,
             Intent.ACTION_PACKAGE_REPLACED,
             Intent.ACTION_PACKAGE_CHANGED,
-            Intent.ACTION_PACKAGE_ENABLED,
-            Intent.ACTION_PACKAGE_DISABLED -> {
+            ACTION_PACKAGE_ENABLED,
+            ACTION_PACKAGE_DISABLED -> {
+
                 val packageName =
-                    intent.data?.schemeSpecificPart
+                    intent.data
+                        ?.schemeSpecificPart
 
                 Log.d(
                     "PackageChangeReceiver",
@@ -39,5 +46,13 @@ class PackageChangeReceiver : BroadcastReceiver() {
                     .loadInstalledApps()
             }
         }
+    }
+
+    companion object {
+        private const val ACTION_PACKAGE_ENABLED =
+            "android.intent.action.PACKAGE_ENABLED"
+
+        private const val ACTION_PACKAGE_DISABLED =
+            "android.intent.action.PACKAGE_DISABLED"
     }
 }

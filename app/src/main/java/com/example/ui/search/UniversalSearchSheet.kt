@@ -44,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.core.apps.AppManager
 import com.example.core.engine.ProfileConfig
 import com.example.core.model.IconShape
 import com.example.core.model.LauncherProfile
@@ -62,7 +61,6 @@ fun UniversalSearchSheet(
 ) {
     val context = LocalContext.current
     val searchEngine = remember { SearchEngine(context) }
-    val appManager = remember { AppManager.getInstance(context) }
 
     var query by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }

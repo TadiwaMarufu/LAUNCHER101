@@ -6,18 +6,15 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.BatteryChargingFull
-import androidx.compose.material.icons.rounded.BatteryStd
-import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.runtime.mutableStateOf
 import com.example.core.LauncherDependencies
-import com.example.core.engine.NowBarBehavior
-import com.example.core.engine.ProfileEngine
 import com.example.core.model.BatteryInfoState
 import com.example.core.model.LauncherProfile
 import com.example.core.model.MediaPlaybackState
@@ -25,18 +22,30 @@ import com.example.core.model.NowBarItem
 import com.example.core.model.NowBarType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Central runtime controller for the launcher Now Bar.
+ * Central controller for the Purple Launcher Now Bar.
  *
- * The controller owns runtime state and delegates personality decisions
- * to ProfileEngine. It does not persist launcher settings itself.
+ * The Now Bar is intentionally treated as a first-class launcher system,
+ * rather than a hard-coded dock.
+ *
+ * Responsibilities:
+ * - observe active profile
+ * - observe intelligence preferences
+ * - observe battery state
+ * - maintain media state
+ * - maintain timer state
+ * - derive contextual Now Bar items
+ * - expose stable StateFlows to UI
+ *
+ * UI is not responsible for deciding which Now Bar items should exist.
  */
 class NowBarController private constructor(
     context: Context
@@ -45,402 +54,487 @@ class NowBarController private constructor(
     private val appContext = context.applicationContext
     private val dependencies = LauncherDependencies.get(appContext)
 
-    private val scope = CoroutineScope(
-        SupervisorJob() + Dispatchers.Main.immediate
-    )
+    private val controllerScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    private val _mediaState = MutableStateFlow(
-        MediaPlaybackState(
-            isPlaying = false,
-            title = "",
-            artist = "",
-            progress = 0f
-        )
-    )
+    private val _items = MutableStateFlow<List<NowBarItem>>(emptyList())
+    val items: StateFlow<List<NowBarItem>> = _items.asStateFlow()
 
+    private val _mediaState =
+        MutableStateFlow(MediaPlaybackState())
     val mediaState: StateFlow<MediaPlaybackState> =
         _mediaState.asStateFlow()
 
     private val _batteryState =
-        MutableStateFlow(BatteryInfoState(0, false, "Unknown"))
-
+        MutableStateFlow(BatteryInfoState())
     val batteryState: StateFlow<BatteryInfoState> =
         _batteryState.asStateFlow()
 
-    private val _timerSeconds = MutableStateFlow(0)
-
+    private val _timerSeconds =
+        MutableStateFlow(0)
     val timerSeconds: StateFlow<Int> =
         _timerSeconds.asStateFlow()
 
-    private val _isTimerRunning = MutableStateFlow(false)
-
+    private val _isTimerRunning =
+        MutableStateFlow(false)
     val isTimerRunning: StateFlow<Boolean> =
         _isTimerRunning.asStateFlow()
 
-    private val _items =
-        MutableStateFlow<List<NowBarItem>>(emptyList())
+    /**
+     * These are deliberately local snapshots of repository Flows.
+     *
+     * ProfileRepository and IntelligenceRepository expose Flow rather
+     * than StateFlow, so the controller must not access `.value`.
+     */
+    private var currentProfile: LauncherProfile = LauncherProfile.FLUID
+    private var contextualSuggestionsEnabled: Boolean = true
 
-    val items: StateFlow<List<NowBarItem>> =
-        _items.asStateFlow()
-
-    private var batteryReceiver: BroadcastReceiver? = null
+    private var timerJob: Job? = null
 
     init {
-        registerBatteryMonitor()
+        observeRepositories()
+        registerBatteryReceiver()
+        recomputeItems()
+    }
 
-        scope.launch {
+    private fun observeRepositories() {
+        controllerScope.launch {
             dependencies.profileRepository.activeProfile.collect { profile ->
-                recomputeItems(profile)
+                currentProfile = profile
+                recomputeItems()
             }
         }
 
-        scope.launch {
-            dependencies.intelligenceRepository.contextualSuggestions.collect {
-                recomputeItems(
-                    dependencies.profileRepository.activeProfile.value
-                )
+        controllerScope.launch {
+            dependencies.intelligenceRepository.contextualSuggestions.collect { enabled ->
+                contextualSuggestionsEnabled = enabled
+                recomputeItems()
             }
         }
     }
 
-    private fun registerBatteryMonitor() {
-        if (batteryReceiver != null) return
+    private fun registerBatteryReceiver() {
+        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
 
         val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action != Intent.ACTION_BATTERY_CHANGED) return
 
-            override fun onReceive(
-                context: Context?,
-                intent: Intent?
-            ) {
-                if (intent == null) return
+                val level = intent.getIntExtra(
+                    BatteryManager.EXTRA_LEVEL,
+                    0
+                )
 
-                val level =
-                    intent.getIntExtra(
-                        BatteryManager.EXTRA_LEVEL,
-                        -1
-                    )
-
-                val scale =
-                    intent.getIntExtra(
-                        BatteryManager.EXTRA_SCALE,
-                        -1
-                    )
-
-                val status =
-                    intent.getIntExtra(
-                        BatteryManager.EXTRA_STATUS,
-                        -1
-                    )
-
-                val isCharging =
-                    status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                        status == BatteryManager.BATTERY_STATUS_FULL
+                val scale = intent.getIntExtra(
+                    BatteryManager.EXTRA_SCALE,
+                    100
+                )
 
                 val percentage =
-                    if (level >= 0 && scale > 0) {
-                        (level * 100) / scale
+                    if (scale > 0) {
+                        ((level.toFloat() / scale.toFloat()) * 100f)
+                            .toInt()
+                            .coerceIn(0, 100)
                     } else {
                         0
                     }
 
-                val health =
-                    when {
-                        percentage <= 15 -> "Low"
-                        isCharging -> "Charging"
-                        else -> "Good"
-                    }
-
-                _batteryState.value =
-                    BatteryInfoState(
-                        percentage = percentage,
-                        isCharging = isCharging,
-                        health = health
-                    )
-
-                recomputeItems(
-                    dependencies.profileRepository.activeProfile.value
+                val status = intent.getIntExtra(
+                    BatteryManager.EXTRA_STATUS,
+                    BatteryManager.BATTERY_STATUS_UNKNOWN
                 )
+
+                val charging =
+                    status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == BatteryManager.BATTERY_STATUS_FULL
+
+                val health = when (
+                    intent.getIntExtra(
+                        BatteryManager.EXTRA_HEALTH,
+                        BatteryManager.BATTERY_HEALTH_UNKNOWN
+                    )
+                ) {
+                    BatteryManager.BATTERY_HEALTH_GOOD ->
+                        "Good"
+
+                    BatteryManager.BATTERY_HEALTH_OVERHEAT ->
+                        "Overheat"
+
+                    BatteryManager.BATTERY_HEALTH_DEAD ->
+                        "Dead"
+
+                    BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE ->
+                        "Over-voltage"
+
+                    BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE ->
+                        "Failure"
+
+                    else ->
+                        "Unknown"
+                }
+
+                _batteryState.value = BatteryInfoState(
+                    percentage = percentage,
+                    isCharging = charging,
+                    healthText = health
+                )
+
+                recomputeItems()
             }
         }
 
-        batteryReceiver = receiver
+        appContext.registerReceiver(receiver, filter)
+    }
 
-        try {
-            appContext.registerReceiver(
-                receiver,
-                IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            )
-        } catch (_: Exception) {
-            batteryReceiver = null
+    fun setMediaState(
+        isPlaying: Boolean,
+        title: String,
+        artist: String = "",
+        progress: Float = 0f
+    ) {
+        _mediaState.value = MediaPlaybackState(
+            isPlaying = isPlaying,
+            title = title,
+            artist = artist,
+            progress = progress.coerceIn(0f, 1f)
+        )
+
+        recomputeItems()
+    }
+
+    fun clearMedia() {
+        _mediaState.value = MediaPlaybackState()
+        recomputeItems()
+    }
+
+    fun toggleMediaPlayback() {
+        if (_mediaState.value.title.isBlank()) return
+
+        _mediaState.value = _mediaState.value.copy(
+            isPlaying = !_mediaState.value.isPlaying
+        )
+
+        recomputeItems()
+    }
+
+    fun startTimer(minutes: Int = 25) {
+        val safeMinutes = minutes.coerceIn(1, 24 * 60)
+
+        timerJob?.cancel()
+
+        _isTimerRunning.value = true
+        _timerSeconds.value = safeMinutes * 60
+
+        timerJob = controllerScope.launch {
+            while (_isTimerRunning.value && _timerSeconds.value > 0) {
+                delay(1_000)
+                _timerSeconds.value =
+                    (_timerSeconds.value - 1).coerceAtLeast(0)
+            }
+
+            if (_timerSeconds.value == 0) {
+                _isTimerRunning.value = false
+            }
+
+            recomputeItems()
+        }
+
+        recomputeItems()
+    }
+
+    fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+
+        _isTimerRunning.value = false
+        _timerSeconds.value = 0
+
+        recomputeItems()
+    }
+
+    fun onNowBarItemClicked(
+        item: NowBarItem,
+        context: Context,
+        onOpenDrawer: (() -> Unit)? = null,
+        onOpenSearch: (() -> Unit)? = null,
+        onOpenSettings: (() -> Unit)? = null,
+        onCycleProfile: (() -> Unit)? = null
+    ) {
+        when (item.type) {
+            NowBarType.ACTION_DRAWER ->
+                onOpenDrawer?.invoke()
+
+            NowBarType.ACTION_SEARCH ->
+                onOpenSearch?.invoke()
+
+            NowBarType.ACTION_SETTINGS ->
+                onOpenSettings?.invoke()
+
+            NowBarType.PROFILE_CHIP ->
+                onCycleProfile?.invoke()
+
+            NowBarType.MEDIA_PLAYER ->
+                toggleMediaPlayback()
+
+            NowBarType.ACTIVE_TIMER -> {
+                if (_isTimerRunning.value) {
+                    stopTimer()
+                }
+            }
+
+            NowBarType.BATTERY_INFO,
+            NowBarType.CALENDAR_GLANCE -> {
+                // Informational items currently have no direct action.
+            }
         }
     }
 
-    /**
-     * Temporary compatibility API.
-     *
-     * Actual media control will be connected to Android's MediaSession/
-     * MediaController layer rather than synthetic demo tracks.
-     */
-    fun togglePlayPause() {
-        if (_mediaState.value.title.isBlank()) return
-
-        _mediaState.value =
-            _mediaState.value.copy(
-                isPlaying = !_mediaState.value.isPlaying
-            )
-
-        recomputeItems(
-            dependencies.profileRepository.activeProfile.value
-        )
-    }
-
-    /**
-     * Temporary compatibility API.
-     *
-     * Real track changes will come from the Android media session.
-     */
-    fun nextTrack() {
-        if (_mediaState.value.title.isBlank()) return
-
-        _mediaState.value =
-            _mediaState.value.copy(
-                isPlaying = true
-            )
-
-        recomputeItems(
-            dependencies.profileRepository.activeProfile.value
-        )
-    }
-
-    fun startOrStopTimer() {
-        if (_isTimerRunning.value) {
-            _isTimerRunning.value = false
-            _timerSeconds.value = 0
-        } else {
-            _isTimerRunning.value = true
-            _timerSeconds.value = 25 * 60
-        }
-
-        recomputeItems(
-            dependencies.profileRepository.activeProfile.value
-        )
-    }
-
-    /**
-     * Rebuilds the Now Bar from runtime state and the active personality.
-     *
-     * Personality selection is owned by ProfileEngine rather than being
-     * duplicated here.
-     */
-    fun recomputeItems(profile: LauncherProfile) {
-        val config = ProfileEngine.getConfig(profile)
-
-        val media = _mediaState.value
+    private fun recomputeItems() {
+        val profile = currentProfile
         val battery = _batteryState.value
+        val media = _mediaState.value
         val timerRunning = _isTimerRunning.value
-        val contextualSuggestions =
-            dependencies.intelligenceRepository.contextualSuggestions.value
+        val timerSeconds = _timerSeconds.value
 
-        val items = mutableListOf<NowBarItem>()
+        val result = mutableListOf<NowBarItem>()
 
-        items += NowBarItem(
-            id = "profile_chip",
+        /*
+         * Every personality gets a profile identity item.
+         * The presentation layer decides how prominently this appears.
+         */
+        result += NowBarItem(
+            id = "profile",
             type = NowBarType.PROFILE_CHIP,
             title = profile.title,
-            subtitle = "Personality",
-            icon = Icons.Rounded.Tune,
-            priority = 100
+            subtitle = profileSubtitle(profile),
+            icon = Icons.Default.Tune,
+            priority = 100,
+            isPinned = true
         )
 
         /*
-         * Do not surface empty/fake media content.
-         * This item will become active when the Android media provider
-         * supplies a real playback session.
+         * Media is genuinely contextual: it only appears when media
+         * information exists.
          */
         if (media.title.isNotBlank()) {
-            items += NowBarItem(
-                id = "media_player",
+            result += NowBarItem(
+                id = "media",
                 type = NowBarType.MEDIA_PLAYER,
                 title = media.title,
-                subtitle = if (media.isPlaying) {
-                    "Playing • ${media.artist}"
-                } else {
-                    "Paused • ${media.artist}"
-                },
-                icon = if (media.isPlaying) {
-                    Icons.Rounded.GraphicEq
-                } else {
-                    Icons.Rounded.PlayArrow
-                },
-                priority = if (media.isPlaying) 90 else 40
-            )
-        }
-
-        if (_batteryState.value.percentage > 0) {
-            items += NowBarItem(
-                id = "battery_info",
-                type = NowBarType.BATTERY_INFO,
-                title = "${battery.percentage}%",
-                subtitle = if (battery.isCharging) {
-                    "Charging"
-                } else {
-                    battery.health
-                },
-                icon = if (battery.isCharging) {
-                    Icons.Rounded.BatteryChargingFull
-                } else {
-                    Icons.Rounded.BatteryStd
-                },
-                priority = when {
-                    battery.percentage < 20 -> 95
-                    battery.isCharging -> 85
-                    else -> 30
-                }
-            )
-        }
-
-        if (timerRunning) {
-            items += NowBarItem(
-                id = "active_timer",
-                type = NowBarType.ACTIVE_TIMER,
-                title = formatTimer(_timerSeconds.value),
-                subtitle = "Active Focus Session",
-                icon = Icons.Rounded.Timer,
+                subtitle = media.artist.ifBlank { null },
+                icon = Icons.Default.MusicNote,
                 priority = 95
             )
         }
 
-        /*
-         * Contextual suggestions are deliberately lightweight.
-         * The controller does not invent calendar events or fake context.
-         */
-        if (contextualSuggestions) {
-            when (config.nowBarBehavior) {
-                NowBarBehavior.ACTION_FIRST -> {
-                    items += NowBarItem(
-                        id = "action_search",
-                        type = NowBarType.ACTION_SEARCH,
-                        title = "Search",
-                        subtitle = "Command Bar",
-                        icon = Icons.Rounded.Search,
-                        priority = 80
-                    )
-                }
-
-                NowBarBehavior.AMBIENT -> {
-                    items += NowBarItem(
-                        id = "action_search",
-                        type = NowBarType.ACTION_SEARCH,
-                        title = "Search",
-                        subtitle = "Command Bar",
-                        icon = Icons.Rounded.Search,
-                        priority = 60
-                    )
-                }
-
-                NowBarBehavior.CURATED -> {
-                    items += NowBarItem(
-                        id = "action_drawer",
-                        type = NowBarType.ACTION_DRAWER,
-                        title = "Apps",
-                        subtitle = "All Categories",
-                        icon = Icons.Rounded.Apps,
-                        priority = 70
-                    )
-                }
-
-                NowBarBehavior.QUIET -> {
-                    // Calm intentionally exposes less.
-                }
-
-                NowBarBehavior.EXPERIMENTAL -> {
-                    items += NowBarItem(
-                        id = "action_search",
-                        type = NowBarType.ACTION_SEARCH,
-                        title = "Search",
-                        subtitle = "Explore",
-                        icon = Icons.Rounded.Search,
-                        priority = 65
-                    )
-                }
-            }
-        }
-
-        /*
-         * The drawer remains available as a core launcher action.
-         * Its priority is influenced by personality behavior.
-         */
-        if (
-            items.none {
-                it.type == NowBarType.ACTION_DRAWER
-            }
-        ) {
-            items += NowBarItem(
-                id = "action_drawer",
-                type = NowBarType.ACTION_DRAWER,
-                title = "Apps",
-                subtitle = "All Categories",
-                icon = Icons.Rounded.Apps,
-                priority = when (config.nowBarBehavior) {
-                    NowBarBehavior.QUIET -> 45
-                    NowBarBehavior.ACTION_FIRST -> 75
-                    else -> 70
-                }
+        if (timerRunning && timerSeconds > 0) {
+            result += NowBarItem(
+                id = "timer",
+                type = NowBarType.ACTIVE_TIMER,
+                title = formatTimer(timerSeconds),
+                subtitle = "Timer",
+                icon = Icons.Default.Alarm,
+                priority = 90,
+                isPinned = true
             )
         }
 
-        if (config.nowBarBehavior == NowBarBehavior.CURATED) {
-            items += NowBarItem(
-                id = "action_settings",
-                type = NowBarType.ACTION_SETTINGS,
-                title = "Settings",
-                subtitle = "Launcher",
-                icon = Icons.Rounded.Settings,
-                priority = 20
+        /*
+         * Battery remains useful across all personalities, but its
+         * importance varies with the profile.
+         */
+        if (shouldShowBattery(profile)) {
+            val chargingText =
+                if (battery.isCharging) "Charging" else "Battery"
+
+            result += NowBarItem(
+                id = "battery",
+                type = NowBarType.BATTERY_INFO,
+                title = "${battery.percentage}%",
+                subtitle = chargingText,
+                icon = Icons.Default.BatteryFull,
+                priority = batteryPriority(profile)
             )
         }
+
+        /*
+         * Contextual suggestions are explicitly user-controlled.
+         */
+        if (contextualSuggestionsEnabled) {
+            result += contextualActions(profile)
+        }
+
+        /*
+         * Core navigation remains available even when contextual
+         * intelligence is disabled.
+         */
+        result += NowBarItem(
+            id = "search",
+            type = NowBarType.ACTION_SEARCH,
+            title = "Search",
+            subtitle = null,
+            icon = Icons.Default.Search,
+            priority = 50
+        )
+
+        result += NowBarItem(
+            id = "drawer",
+            type = NowBarType.ACTION_DRAWER,
+            title = "Apps",
+            subtitle = null,
+            icon = Icons.Default.Apps,
+            priority = 45
+        )
+
+        result += NowBarItem(
+            id = "settings",
+            type = NowBarType.ACTION_SETTINGS,
+            title = "Settings",
+            subtitle = null,
+            icon = Icons.Default.Settings,
+            priority = 40
+        )
 
         _items.value =
-            items.sortedByDescending { it.priority }
+            result
+                .filter { it.isEnabled }
+                .sortedByDescending { it.priority }
     }
 
-    private fun formatTimer(seconds: Int): String {
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
+    private fun contextualActions(
+        profile: LauncherProfile
+    ): List<NowBarItem> {
+        return when (profile) {
+            LauncherProfile.FLUID -> {
+                listOf(
+                    NowBarItem(
+                        id = "fluid_search",
+                        type = NowBarType.ACTION_SEARCH,
+                        title = "Explore",
+                        subtitle = "Quick search",
+                        icon = Icons.Default.Search,
+                        priority = 65
+                    )
+                )
+            }
 
-        return if (remainingSeconds == 0) {
-            "${minutes}m Left"
-        } else {
-            "%d:%02d Left".format(
-                minutes,
-                remainingSeconds
-            )
-        }
-    }
+            LauncherProfile.PREMIUM -> {
+                listOf(
+                    NowBarItem(
+                        id = "premium_settings",
+                        type = NowBarType.ACTION_SETTINGS,
+                        title = "Personalize",
+                        subtitle = "Launcher settings",
+                        icon = Icons.Default.Tune,
+                        priority = 65
+                    )
+                )
+            }
 
-    fun destroy() {
-        batteryReceiver?.let { receiver ->
-            try {
-                appContext.unregisterReceiver(receiver)
-            } catch (_: Exception) {
+            LauncherProfile.CALM -> {
+                emptyList()
+            }
+
+            LauncherProfile.FOCUS -> {
+                listOf(
+                    NowBarItem(
+                        id = "focus_timer",
+                        type = NowBarType.ACTIVE_TIMER,
+                        title = "Start Focus",
+                        subtitle = "25 min",
+                        icon = Icons.Default.Alarm,
+                        priority = 80
+                    )
+                )
+            }
+
+            LauncherProfile.EXPRESSIVE -> {
+                listOf(
+                    NowBarItem(
+                        id = "expressive_search",
+                        type = NowBarType.ACTION_SEARCH,
+                        title = "Create",
+                        subtitle = "Search & explore",
+                        icon = Icons.Default.Search,
+                        priority = 70
+                    )
+                )
             }
         }
+    }
 
-        batteryReceiver = null
-        scope.cancel()
+    private fun shouldShowBattery(
+        profile: LauncherProfile
+    ): Boolean {
+        return when (profile) {
+            LauncherProfile.FLUID,
+            LauncherProfile.PREMIUM,
+            LauncherProfile.FOCUS,
+            LauncherProfile.EXPRESSIVE -> true
+
+            LauncherProfile.CALM ->
+                _batteryState.value.percentage <= 20 ||
+                    _batteryState.value.isCharging
+        }
+    }
+
+    private fun batteryPriority(
+        profile: LauncherProfile
+    ): Int {
+        return when (profile) {
+            LauncherProfile.FOCUS -> 85
+            LauncherProfile.FLUID -> 70
+            LauncherProfile.PREMIUM -> 60
+            LauncherProfile.EXPRESSIVE -> 55
+            LauncherProfile.CALM -> 80
+        }
+    }
+
+    private fun profileSubtitle(
+        profile: LauncherProfile
+    ): String {
+        return when (profile) {
+            LauncherProfile.FLUID ->
+                "Alive & responsive"
+
+            LauncherProfile.PREMIUM ->
+                "Refined & precise"
+
+            LauncherProfile.CALM ->
+                "Quiet & minimal"
+
+            LauncherProfile.FOCUS ->
+                "Fast & productive"
+
+            LauncherProfile.EXPRESSIVE ->
+                "Creative & experimental"
+        }
+    }
+
+    private fun formatTimer(
+        totalSeconds: Int
+    ): String {
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+
+        return "%02d:%02d".format(
+            minutes,
+            seconds
+        )
     }
 
     companion object {
-
         @Volatile
-        private var INSTANCE: NowBarController? = null
+        private var instance: NowBarController? = null
 
-        fun getInstance(context: Context): NowBarController {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: NowBarController(
+        fun getInstance(
+            context: Context
+        ): NowBarController {
+            return instance ?: synchronized(this) {
+                instance ?: NowBarController(
                     context.applicationContext
                 ).also {
-                    INSTANCE = it
+                    instance = it
                 }
             }
         }
