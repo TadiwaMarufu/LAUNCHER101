@@ -1,7 +1,6 @@
 package com.example.core.engine
 
 import androidx.compose.animation.core.Spring
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.core.model.LauncherProfile
@@ -142,9 +141,6 @@ object ProfileEngine {
                 motionStyle = MotionStyle.ORGANIC,
 
                 cornerRadius = 28.dp,
-                cardBackgroundAlpha = 0.65f,
-                cardBorderWidth = 1.dp,
-                cardBorderColor = Color(0x33A855F7),
 
                 springDamping = Spring.DampingRatioMediumBouncy,
                 springStiffness = Spring.StiffnessLow,
@@ -153,8 +149,6 @@ object ProfileEngine {
                 iconSize = 56.dp,
                 gridColumns = 4,
                 headerSpacing = 24.dp,
-                fontLetterSpacing = 0.02f,
-                wallpaperBlurRadius = 16.dp
             )
 
             LauncherProfile.PREMIUM -> ProfileConfig(
@@ -170,9 +164,6 @@ object ProfileEngine {
                 motionStyle = MotionStyle.REFINED,
 
                 cornerRadius = 20.dp,
-                cardBackgroundAlpha = 0.85f,
-                cardBorderWidth = 1.5.dp,
-                cardBorderColor = Color(0x40E2E8F0),
 
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMedium,
@@ -181,8 +172,6 @@ object ProfileEngine {
                 iconSize = 52.dp,
                 gridColumns = 4,
                 headerSpacing = 32.dp,
-                fontLetterSpacing = 0.08f,
-                wallpaperBlurRadius = 8.dp
             )
 
             LauncherProfile.CALM -> ProfileConfig(
@@ -198,9 +187,6 @@ object ProfileEngine {
                 motionStyle = MotionStyle.RESTRAINED,
 
                 cornerRadius = 16.dp,
-                cardBackgroundAlpha = 0.35f,
-                cardBorderWidth = 0.5.dp,
-                cardBorderColor = Color(0x20FFFFFF),
 
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMediumLow,
@@ -209,8 +195,6 @@ object ProfileEngine {
                 iconSize = 48.dp,
                 gridColumns = 4,
                 headerSpacing = 48.dp,
-                fontLetterSpacing = 0.04f,
-                wallpaperBlurRadius = 0.dp
             )
 
             LauncherProfile.FOCUS -> ProfileConfig(
@@ -226,9 +210,6 @@ object ProfileEngine {
                 motionStyle = MotionStyle.RESPONSIVE,
 
                 cornerRadius = 14.dp,
-                cardBackgroundAlpha = 0.90f,
-                cardBorderWidth = 1.dp,
-                cardBorderColor = Color(0x309333EA),
 
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessHigh,
@@ -237,8 +218,6 @@ object ProfileEngine {
                 iconSize = 50.dp,
                 gridColumns = 4,
                 headerSpacing = 16.dp,
-                fontLetterSpacing = 0.01f,
-                wallpaperBlurRadius = 4.dp
             )
 
             LauncherProfile.EXPRESSIVE -> ProfileConfig(
@@ -254,9 +233,6 @@ object ProfileEngine {
                 motionStyle = MotionStyle.PLAYFUL,
 
                 cornerRadius = 36.dp,
-                cardBackgroundAlpha = 0.75f,
-                cardBorderWidth = 2.dp,
-                cardBorderColor = Color(0x50D946EF),
 
                 springDamping = Spring.DampingRatioHighBouncy,
                 springStiffness = Spring.StiffnessLow,
@@ -265,8 +241,6 @@ object ProfileEngine {
                 iconSize = 60.dp,
                 gridColumns = 4,
                 headerSpacing = 28.dp,
-                fontLetterSpacing = -0.02f,
-                wallpaperBlurRadius = 24.dp
             )
         }
     }
