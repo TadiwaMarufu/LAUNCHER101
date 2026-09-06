@@ -50,7 +50,6 @@ import com.example.ui.theme.LocalLauncherAppearance
 import com.example.ui.widgets.PersonalityClockWidget
 import kotlin.math.roundToInt
 
-private const val GRID_COLUMNS = 5
 private const val GRID_ROWS = 10
 
 @Composable
@@ -84,6 +83,11 @@ fun HomeCanvas(
 
     val widgetManager = dependencies.widgetManager
 
+    // The profile owns horizontal home density.
+    // Keep vertical capacity stable while preserving persisted item coordinates.
+    val gridColumns = config.gridColumns.coerceIn(3, 6)
+    val gridRows = GRID_ROWS
+
     val nowBarItems = nowBarController.items.value
     val mediaState = nowBarController.mediaState.value
 
@@ -103,8 +107,8 @@ fun HomeCanvas(
                 )
             }
     ) {
-        val cellWidth = maxWidth / GRID_COLUMNS
-        val cellHeight = maxHeight / GRID_ROWS
+        val cellWidth = maxWidth / gridColumns
+        val cellHeight = maxHeight / gridRows
 
         items
             .asSequence()
@@ -119,7 +123,7 @@ fun HomeCanvas(
 
                 val safeX = item.x.coerceIn(
                     0,
-                    (GRID_COLUMNS - safeWidth).coerceAtLeast(0)
+                    (gridColumns - safeWidth).coerceAtLeast(0)
                 )
 
                 val safeY = item.y.coerceIn(
@@ -222,7 +226,7 @@ fun HomeCanvas(
                                                 ).coerceIn(
                                                     0,
                                                     (
-                                                        GRID_COLUMNS -
+                                                        gridColumns -
                                                             safeWidth
                                                     ).coerceAtLeast(0)
                                                 ),
@@ -232,7 +236,7 @@ fun HomeCanvas(
                                                 ).coerceIn(
                                                     0,
                                                     (
-                                                        GRID_ROWS -
+                                                        gridRows -
                                                             safeHeight
                                                     ).coerceAtLeast(0)
                                                 )
@@ -408,7 +412,7 @@ private fun AppCanvasItem(
                 drawable = app.icon,
                 label = app.label,
                 iconShape = iconShape,
-                size = 54.dp,
+                size = config.iconSize,
                 accentColor = appearance.primary
             )
 
