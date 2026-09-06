@@ -1,5 +1,7 @@
 package com.example.ui.home
 
+import android.content.Context
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -128,6 +130,13 @@ class HomeViewModel(
         }
     }
 
+    fun launchApp(
+        context: Context,
+        app: AppItem
+    ) {
+        appManager.launchApp(context, app)
+    }
+
     fun cycleProfile() {
         viewModelScope.launch {
             dependencies.profileRepository.cycleProfile()
@@ -140,16 +149,12 @@ class HomeViewModel(
         }
     }
 
-    fun toggleAppPin(componentName: String) {
+    fun toggleAppPin(app: AppItem) {
         viewModelScope.launch {
-            val pinned =
-                dependencies.profileRepository.pinnedApps.first()
-
-            if (componentName in pinned) {
-                dependencies.profileRepository.unpinApp(componentName)
-            } else {
-                dependencies.profileRepository.pinApp(componentName)
-            }
+            contentRepository.toggleAppPin(
+                app.componentNameString
+            )
+            appManager.loadInstalledApps()
         }
     }
 

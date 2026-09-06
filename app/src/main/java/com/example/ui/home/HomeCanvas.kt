@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -65,7 +66,7 @@ fun HomeCanvas(
     onLongPress: () -> Unit = {},
     onItemClick: (HomeItem) -> Unit = {},
     onItemLongPress: (HomeItem) -> Unit = {},
-    onItemMove: (HomeItem, Int, Int) -> Unit = {},
+    onItemMove: (HomeItem, Int, Int) -> Unit = { _, _, _ -> },
     onLaunchApp: (AppItem) -> Unit = {},
     onProfileChipClick: () -> Unit = {},
     onMediaPlayToggle: () -> Unit = {},
@@ -73,8 +74,10 @@ fun HomeCanvas(
     onDrawerClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
-    val dependencies = remember {
-        LauncherDependencies.get()
+    val context = LocalContext.current
+
+    val dependencies = remember(context) {
+        LauncherDependencies.get(context)
     }
 
     val widgetManager = dependencies.widgetManager

@@ -255,10 +255,10 @@ fun HomeScreen(
                         LauncherOverlayState.ITEM_MENU
                 },
 
-                onItemMove = { item, page, x, y ->
+                onItemMove = { item, x, y ->
                     homeViewModel.moveHomeItem(
                         itemId = item.id,
-                        page = page,
+                        page = item.page,
                         x = x,
                         y = y
                     )
