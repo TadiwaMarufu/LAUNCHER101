@@ -98,12 +98,16 @@ data class ProfileConfig(
     val informationDensity: InformationDensity,
     val motionStyle: MotionStyle,
 
-    // Visual tokens
+    // Visual geometry
     val cornerRadius: Dp,
+    val itemHorizontalPadding: Dp,
+    val itemVerticalPadding: Dp,
+    val itemSpacing: Dp,
 
     // Motion parameters
     val springDamping: Float,
     val springStiffness: Float,
+    val editScale: Float,
 
     // Home defaults
     val showAppLabels: Boolean,
@@ -137,8 +141,13 @@ object ProfileEngine {
 
                 cornerRadius = 28.dp,
 
+                itemHorizontalPadding = 6.dp,
+                itemVerticalPadding = 8.dp,
+                itemSpacing = 8.dp,
+
                 springDamping = Spring.DampingRatioMediumBouncy,
                 springStiffness = Spring.StiffnessLow,
+                editScale = 0.94f,
 
                 showAppLabels = true,
                 iconSize = 56.dp,
@@ -160,8 +169,13 @@ object ProfileEngine {
 
                 cornerRadius = 20.dp,
 
+                itemHorizontalPadding = 7.dp,
+                itemVerticalPadding = 9.dp,
+                itemSpacing = 6.dp,
+
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMedium,
+                editScale = 0.97f,
 
                 showAppLabels = true,
                 iconSize = 52.dp,
@@ -183,8 +197,13 @@ object ProfileEngine {
 
                 cornerRadius = 16.dp,
 
+                itemHorizontalPadding = 8.dp,
+                itemVerticalPadding = 10.dp,
+                itemSpacing = 10.dp,
+
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessMediumLow,
+                editScale = 0.98f,
 
                 showAppLabels = false,
                 iconSize = 48.dp,
@@ -206,8 +225,13 @@ object ProfileEngine {
 
                 cornerRadius = 14.dp,
 
+                itemHorizontalPadding = 5.dp,
+                itemVerticalPadding = 6.dp,
+                itemSpacing = 4.dp,
+
                 springDamping = Spring.DampingRatioNoBouncy,
                 springStiffness = Spring.StiffnessHigh,
+                editScale = 0.96f,
 
                 showAppLabels = true,
                 iconSize = 50.dp,
@@ -229,8 +253,13 @@ object ProfileEngine {
 
                 cornerRadius = 36.dp,
 
+                itemHorizontalPadding = 4.dp,
+                itemVerticalPadding = 6.dp,
+                itemSpacing = 10.dp,
+
                 springDamping = Spring.DampingRatioHighBouncy,
                 springStiffness = Spring.StiffnessLow,
+                editScale = 0.92f,
 
                 showAppLabels = true,
                 iconSize = 60.dp,

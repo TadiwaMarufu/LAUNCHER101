@@ -143,10 +143,11 @@ fun HomeCanvas(
                 }
 
                 val scale by animateFloatAsState(
-                    targetValue = if (editMode) 0.96f else 1f,
+                    targetValue =
+                        if (editMode) config.editScale else 1f,
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
-                        stiffness = Spring.StiffnessMedium
+                        dampingRatio = config.springDamping,
+                        stiffness = config.springStiffness
                     ),
                     label = "home-item-scale"
                 )
@@ -401,14 +402,15 @@ private fun AppCanvasItem(
 
     Box(
         modifier = modifier.padding(
-            horizontal = 6.dp,
-            vertical = 8.dp
+            horizontal = config.itemHorizontalPadding,
+            vertical = config.itemVerticalPadding
         ),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+            verticalArrangement =
+                Arrangement.spacedBy(config.itemSpacing)
         ) {
             AppIconImage(
                 drawable = app.icon,
