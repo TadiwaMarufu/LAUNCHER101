@@ -40,12 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.core.data.LauncherPreferences
 import com.example.core.model.LauncherProfile
 
 @Composable
@@ -53,7 +51,6 @@ fun OnboardingScreen(
     onComplete: (LauncherProfile) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val scrollState = rememberScrollState()
     var selectedProfile by remember { mutableStateOf(LauncherProfile.FLUID) }
 

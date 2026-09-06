@@ -24,10 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Gesture
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Tune
@@ -38,7 +35,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +45,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.core.data.LauncherPreferences
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.core.LauncherDependencies
 import com.example.core.model.IconShape
-import com.example.core.model.LauncherProfile
 import com.example.core.model.QualityTier
 import com.example.core.model.WallpaperPreset
 
@@ -62,24 +59,30 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val preferences = LauncherPreferences.getInstance(context)
+
+    val dependencies = LauncherDependencies.get(context)
+
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModelFactory(dependencies)
+    )
+
+    val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
+
     val scrollState = rememberScrollState()
 
-    val activeProfile by preferences.activeProfile.collectAsState()
-    val qualityTier by preferences.qualityTier.collectAsState()
-    val wallpaperPreset by preferences.wallpaperPreset.collectAsState()
-    val iconShape by preferences.iconShape.collectAsState()
-    val showIconLabels by preferences.showIconLabels.collectAsState()
-    val trackAppUsage by preferences.trackAppUsage.collectAsState()
-    val contextualSuggestions by preferences.contextualSuggestions.collectAsState()
+    val activeProfile = state.activeProfile
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0C0915))
-            .padding(top = 16.dp, start = 20.dp, end = 20.dp, bottom = 16.dp)
+            .padding(
+                top = 16.dp,
+                start = 20.dp,
+                end = 20.dp,
+                bottom = 16.dp
+            )
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -97,7 +100,9 @@ fun SettingsScreen(
                     tint = Color.White
                 )
             }
+
             Spacer(modifier = Modifier.width(14.dp))
+
             Column {
                 Text(
                     text = "SETTINGS",
@@ -106,6 +111,7 @@ fun SettingsScreen(
                     letterSpacing = 1.sp,
                     color = Color(0xFFA855F7)
                 )
+
                 Text(
                     text = "The Purple Launcher",
                     fontSize = 18.sp,
@@ -123,16 +129,29 @@ fun SettingsScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Section 1: Active Personality
-            SettingsSectionHeader(title = "Personality & Identity", icon = Icons.Rounded.Tune)
+
+            // ---------------------------------------------------------
+            // Personality & Identity
+            // ---------------------------------------------------------
+
+            SettingsSectionHeader(
+                title = "Personality & Identity",
+                icon = Icons.Rounded.Tune
+            )
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
                     .background(Color(0xFF161126))
-                    .border(1.dp, activeProfile.primaryAccent.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
-                    .clickable { onOpenProfileSwitcher() }
+                    .border(
+                        width = 1.dp,
+                        color = activeProfile.primaryAccent.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(18.dp)
+                    )
+                    .clickable {
+                        onOpenProfileSwitcher()
+                    }
                     .padding(16.dp)
             ) {
                 Row(
@@ -141,14 +160,18 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
                                     .background(activeProfile.primaryAccent)
                             )
+
                             Spacer(modifier = Modifier.width(8.dp))
+
                             Text(
                                 text = "Active: ${activeProfile.title}",
                                 fontSize = 16.sp,
@@ -156,7 +179,9 @@ fun SettingsScreen(
                                 color = Color.White
                             )
                         }
+
                         Spacer(modifier = Modifier.height(2.dp))
+
                         Text(
                             text = activeProfile.tagline,
                             fontSize = 12.sp,
@@ -167,8 +192,13 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(activeProfile.primaryAccent.copy(alpha = 0.2f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .background(
+                                activeProfile.primaryAccent.copy(alpha = 0.2f)
+                            )
+                            .padding(
+                                horizontal = 12.dp,
+                                vertical = 6.dp
+                            )
                     ) {
                         Text(
                             text = "Switch",
@@ -180,8 +210,14 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 2: Appearance & Wallpapers
-            SettingsSectionHeader(title = "Atmosphere & Icons", icon = Icons.Rounded.Wallpaper)
+            // ---------------------------------------------------------
+            // Atmosphere & Icons
+            // ---------------------------------------------------------
+
+            SettingsSectionHeader(
+                title = "Atmosphere & Icons",
+                icon = Icons.Rounded.Wallpaper
+            )
 
             Column(
                 modifier = Modifier
@@ -203,21 +239,38 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WallpaperPreset.values().forEach { preset ->
-                        val isSelected = preset == wallpaperPreset
+                        val isSelected = preset == state.wallpaperPreset
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) activeProfile.primaryAccent else Color(0xFF221A37))
-                                .clickable { preferences.setWallpaperPreset(preset) }
+                                .background(
+                                    if (isSelected) {
+                                        activeProfile.primaryAccent
+                                    } else {
+                                        Color(0xFF221A37)
+                                    }
+                                )
+                                .clickable {
+                                    settingsViewModel.setWallpaperPreset(preset)
+                                }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = preset.label.split(" ").first(),
                                 fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else Color(0xFFA89BB9)
+                                fontWeight = if (isSelected) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                },
+                                color = if (isSelected) {
+                                    Color.White
+                                } else {
+                                    Color(0xFFA89BB9)
+                                }
                             )
                         }
                     }
@@ -237,21 +290,38 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     IconShape.values().forEach { shape ->
-                        val isSelected = shape == iconShape
+                        val isSelected = shape == state.iconShape
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) activeProfile.primaryAccent else Color(0xFF221A37))
-                                .clickable { preferences.setIconShape(shape) }
+                                .background(
+                                    if (isSelected) {
+                                        activeProfile.primaryAccent
+                                    } else {
+                                        Color(0xFF221A37)
+                                    }
+                                )
+                                .clickable {
+                                    settingsViewModel.setIconShape(shape)
+                                }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = shape.label,
                                 fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else Color(0xFFA89BB9)
+                                fontWeight = if (isSelected) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                },
+                                color = if (isSelected) {
+                                    Color.White
+                                } else {
+                                    Color(0xFFA89BB9)
+                                }
                             )
                         }
                     }
@@ -267,9 +337,12 @@ fun SettingsScreen(
                         fontSize = 14.sp,
                         color = Color.White
                     )
+
                     Switch(
-                        checked = showIconLabels,
-                        onCheckedChange = { preferences.setShowIconLabels(it) },
+                        checked = state.showIconLabels,
+                        onCheckedChange = {
+                            settingsViewModel.setShowIconLabels(it)
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = activeProfile.primaryAccent
@@ -278,8 +351,14 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 3: Performance & Low-RAM Optimization
-            SettingsSectionHeader(title = "Hardware & Performance", icon = Icons.Rounded.Speed)
+            // ---------------------------------------------------------
+            // Hardware & Performance
+            // ---------------------------------------------------------
+
+            SettingsSectionHeader(
+                title = "Hardware & Performance",
+                icon = Icons.Rounded.Speed
+            )
 
             Column(
                 modifier = Modifier
@@ -290,14 +369,22 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QualityTier.values().forEach { tier ->
-                    val isSelected = tier == qualityTier
+                    val isSelected = tier == state.qualityTier
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) Color(0xFF241B3B) else Color.Transparent)
-                            .clickable { preferences.setQualityTier(tier) }
+                            .background(
+                                if (isSelected) {
+                                    Color(0xFF241B3B)
+                                } else {
+                                    Color.Transparent
+                                }
+                            )
+                            .clickable {
+                                settingsViewModel.setQualityTier(tier)
+                            }
                             .padding(12.dp)
                     ) {
                         Row(
@@ -305,19 +392,27 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Text(
                                     text = tier.label,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) activeProfile.primaryAccent else Color.White
+                                    color = if (isSelected) {
+                                        activeProfile.primaryAccent
+                                    } else {
+                                        Color.White
+                                    }
                                 )
+
                                 Text(
                                     text = tier.description,
                                     fontSize = 11.sp,
                                     color = Color(0xFF94A3B8)
                                 )
                             }
+
                             if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Rounded.Check,
@@ -331,8 +426,14 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 4: Privacy & Adaptive Intelligence
-            SettingsSectionHeader(title = "Privacy & Local Intelligence", icon = Icons.Rounded.Security)
+            // ---------------------------------------------------------
+            // Privacy & Adaptive Intelligence
+            // ---------------------------------------------------------
+
+            SettingsSectionHeader(
+                title = "Privacy & Local Intelligence",
+                icon = Icons.Rounded.Security
+            )
 
             Column(
                 modifier = Modifier
@@ -347,21 +448,27 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = "Local App Usage Tracking",
                             fontSize = 14.sp,
                             color = Color.White
                         )
+
                         Text(
                             text = "100% on-device. Used to sort frequent apps.",
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8)
                         )
                     }
+
                     Switch(
-                        checked = trackAppUsage,
-                        onCheckedChange = { preferences.setTrackAppUsage(it) },
+                        checked = state.trackAppUsage,
+                        onCheckedChange = {
+                            settingsViewModel.setTrackAppUsage(it)
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = activeProfile.primaryAccent
@@ -374,21 +481,27 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = "Contextual Suggestions",
                             fontSize = 14.sp,
                             color = Color.White
                         )
+
                         Text(
                             text = "Adapts Now Bar and search suggestions locally.",
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8)
                         )
                     }
+
                     Switch(
-                        checked = contextualSuggestions,
-                        onCheckedChange = { preferences.setContextualSuggestions(it) },
+                        checked = state.contextualSuggestions,
+                        onCheckedChange = {
+                            settingsViewModel.setContextualSuggestions(it)
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = activeProfile.primaryAccent
@@ -397,57 +510,19 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 5: Default Launcher
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF161126))
-                    .clickable {
-                        try {
-                            val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            try {
-                                val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                }
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
-                        }
-                    }
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Home,
-                        contentDescription = "Default Launcher",
-                        tint = activeProfile.primaryAccent,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column {
-                        Text(
-                            text = "Set Default Launcher",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Open Android default apps settings",
-                            fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                }
-            }
+            // ---------------------------------------------------------
+            // Default Launcher
+            // ---------------------------------------------------------
 
-            // Section 6: About
+            DefaultLauncherCard(
+                context = context,
+                accent = activeProfile.primaryAccent
+            )
+
+            // ---------------------------------------------------------
+            // About
+            // ---------------------------------------------------------
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -460,12 +535,15 @@ fun SettingsScreen(
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
+
                 Text(
                     text = "Android, in your own frequency.",
                     fontSize = 12.sp,
                     color = activeProfile.primaryAccent
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = "No ads • No subscriptions • Enthusiast built",
                     fontSize = 10.sp,
@@ -479,7 +557,79 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsSectionHeader(title: String, icon: ImageVector) {
+private fun DefaultLauncherCard(
+    context: Context,
+    accent: Color
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFF161126))
+            .clickable {
+                openDefaultLauncherSettings(context)
+            }
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Home,
+                contentDescription = "Default Launcher",
+                tint = accent,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column {
+                Text(
+                    text = "Set Default Launcher",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Text(
+                    text = "Open Android default apps settings",
+                    fontSize = 11.sp,
+                    color = Color(0xFF94A3B8)
+                )
+            }
+        }
+    }
+}
+
+private fun openDefaultLauncherSettings(context: Context) {
+    try {
+        val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            // Some OEMs expose neither settings activity.
+            // Failing silently keeps the launcher home stable.
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionHeader(
+    title: String,
+    icon: ImageVector
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(start = 4.dp)
@@ -490,7 +640,9 @@ private fun SettingsSectionHeader(title: String, icon: ImageVector) {
             tint = Color(0xFFA855F7),
             modifier = Modifier.size(16.dp)
         )
+
         Spacer(modifier = Modifier.width(8.dp))
+
         Text(
             text = title.uppercase(),
             fontSize = 11.sp,

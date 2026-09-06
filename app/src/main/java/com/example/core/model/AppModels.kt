@@ -33,3 +33,12 @@ data class AppItem(
     val componentNameString: String
         get() = "$packageName/$activityName"
 }
+
+/**
+ * Persistent local usage metadata for a launcher application.
+ */
+data class AppUsage(
+    val componentName: String,
+    val launchCount: Int = 0,
+    val lastLaunched: Long = 0L
+)
