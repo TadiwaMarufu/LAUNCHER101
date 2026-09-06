@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -41,12 +40,13 @@ import com.example.core.LauncherDependencies
 import com.example.core.engine.ProfileEngine
 import com.example.core.model.HomeItem
 import com.example.core.model.HomeItemType
-import com.example.core.nowbar.NowBarController
 import com.example.core.model.LauncherProfile
+import com.example.core.nowbar.NowBarController
 import com.example.ui.drawer.AppDrawerView
 import com.example.ui.profileswitcher.ProfileSwitcherDialog
 import com.example.ui.search.UniversalSearchSheet
 import com.example.ui.settings.SettingsScreen
+import com.example.ui.theme.LocalLauncherAppearance
 
 enum class LauncherOverlayState {
     NONE,
@@ -76,6 +76,7 @@ fun HomeScreen(
     onAddWidget: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val appearance = LocalLauncherAppearance.current
 
     val dependencies = remember {
         LauncherDependencies.get(context)
@@ -307,7 +308,9 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .background(
-                            Color.Black.copy(alpha = 0.72f)
+                            appearance.elevatedSurface.copy(
+                                alpha = appearance.surfaceAlpha
+                            )
                         )
                         .padding(
                             horizontal = 8.dp,
@@ -316,22 +319,34 @@ fun HomeScreen(
                     horizontalArrangement =
                         Arrangement.spacedBy(4.dp)
                 ) {
-                    EditAction("Add") {
+                    EditAction(
+                        text = "Add",
+                        appearance = appearance
+                    ) {
                         overlayState =
                             LauncherOverlayState.ADD_MENU
                     }
 
-                    EditAction("Profile") {
+                    EditAction(
+                        text = "Profile",
+                        appearance = appearance
+                    ) {
                         overlayState =
                             LauncherOverlayState.PROFILE_SWITCHER
                     }
 
-                    EditAction("Settings") {
+                    EditAction(
+                        text = "Settings",
+                        appearance = appearance
+                    ) {
                         overlayState =
                             LauncherOverlayState.SETTINGS
                     }
 
-                    EditAction("Done") {
+                    EditAction(
+                        text = "Done",
+                        appearance = appearance
+                    ) {
                         editMode = false
                     }
                 }
@@ -461,8 +476,8 @@ fun HomeScreen(
                         rememberModalBottomSheetState(
                             skipPartiallyExpanded = true
                         ),
-                    containerColor = Color.Transparent,
-                    dragHandle = null
+                    containerColor = appearance.surface,
+                    contentColor = appearance.onSurface
                 ) {
                     ProfileSwitcherDialog(
                         activeProfile = activeProfile,
@@ -489,6 +504,7 @@ fun HomeScreen(
                     LauncherOverlayState.ADD_MENU
             ) {
                 AddHomeItemSheet(
+                    appearance = appearance,
                     onDismiss = {
                         overlayState =
                             LauncherOverlayState.NONE
@@ -533,6 +549,7 @@ fun HomeScreen(
             ) {
                 ItemEditorSheet(
                     item = selectedItem!!,
+                    appearance = appearance,
 
                     onDismiss = {
                         selectedItem = null
@@ -570,11 +587,12 @@ fun HomeScreen(
 @Composable
 private fun EditAction(
     text: String,
+    appearance: com.example.core.appearance.LauncherAppearance,
     onClick: () -> Unit
 ) {
     Text(
         text = text,
-        color = Color.White,
+        color = appearance.onSurface,
         modifier = Modifier
             .clickable(onClick = onClick)
             .padding(
@@ -587,6 +605,7 @@ private fun EditAction(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddHomeItemSheet(
+    appearance: com.example.core.appearance.LauncherAppearance,
     onDismiss: () -> Unit,
     onAddApp: () -> Unit,
     onAddClock: () -> Unit,
@@ -598,7 +617,9 @@ private fun AddHomeItemSheet(
         sheetState =
             rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
-            )
+            ),
+        containerColor = appearance.surface,
+        contentColor = appearance.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -610,12 +631,34 @@ private fun AddHomeItemSheet(
             verticalArrangement =
                 Arrangement.spacedBy(8.dp)
         ) {
-            Text("Add to Home")
+            Text(
+                text = "Add to Home",
+                color = appearance.onSurface
+            )
 
-            AddOption("App", onAddApp)
-            AddOption("Widget", onAddWidget)
-            AddOption("Clock", onAddClock)
-            AddOption("Now Bar", onAddNowBar)
+            AddOption(
+                text = "App",
+                appearance = appearance,
+                onClick = onAddApp
+            )
+
+            AddOption(
+                text = "Widget",
+                appearance = appearance,
+                onClick = onAddWidget
+            )
+
+            AddOption(
+                text = "Clock",
+                appearance = appearance,
+                onClick = onAddClock
+            )
+
+            AddOption(
+                text = "Now Bar",
+                appearance = appearance,
+                onClick = onAddNowBar
+            )
 
             Spacer(
                 modifier = Modifier.height(16.dp)
@@ -623,7 +666,8 @@ private fun AddHomeItemSheet(
 
             Text(
                 text =
-                    "Home is yours. Nothing is added automatically."
+                    "Home is yours. Nothing is added automatically.",
+                color = appearance.onSurfaceVariant
             )
         }
     }
@@ -632,10 +676,12 @@ private fun AddHomeItemSheet(
 @Composable
 private fun AddOption(
     text: String,
+    appearance: com.example.core.appearance.LauncherAppearance,
     onClick: () -> Unit
 ) {
     Text(
         text = text,
+        color = appearance.onSurface,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -647,11 +693,14 @@ private fun AddOption(
 @Composable
 private fun ItemEditorSheet(
     item: HomeItem,
+    appearance: com.example.core.appearance.LauncherAppearance,
     onDismiss: () -> Unit,
     onRemove: () -> Unit
 ) {
     ModalBottomSheet(
-        onDismissRequest = onDismiss
+        onDismissRequest = onDismiss,
+        containerColor = appearance.surface,
+        contentColor = appearance.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -667,21 +716,25 @@ private fun ItemEditorSheet(
                             .lowercase()
                             .replaceFirstChar {
                                 it.uppercase()
-                            }
+                            },
+                color = appearance.onSurface
             )
 
             Text(
                 text =
-                    "Position: ${item.x}, ${item.y}"
+                    "Position: ${item.x}, ${item.y}",
+                color = appearance.onSurfaceVariant
             )
 
             Text(
                 text =
-                    "Size: ${item.width} × ${item.height}"
+                    "Size: ${item.width} × ${item.height}",
+                color = appearance.onSurfaceVariant
             )
 
             Text(
                 text = "Remove",
+                color = appearance.onSurface,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(
