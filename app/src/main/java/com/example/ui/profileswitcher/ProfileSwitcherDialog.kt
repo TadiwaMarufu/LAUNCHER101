@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.LauncherProfile
+import com.example.ui.theme.LocalLauncherAppearance
 
 @Composable
 fun ProfileSwitcherDialog(
@@ -41,12 +42,27 @@ fun ProfileSwitcherDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
+
+    val dialogShape = RoundedCornerShape(
+        topStart = appearance.cornerRadius.dp,
+        topEnd = appearance.cornerRadius.dp
+    )
+
+    val itemShape = RoundedCornerShape(
+        (appearance.cornerRadius * 0.8f).dp
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .background(Color(0xFF100C1B))
-            .border(1.dp, Color(0x33A855F7), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .clip(dialogShape)
+            .background(appearance.background)
+            .border(
+                width = appearance.borderWidth.dp,
+                color = appearance.divider,
+                shape = dialogShape
+            )
             .padding(20.dp)
     ) {
         Column {
@@ -61,13 +77,14 @@ fun ProfileSwitcherDialog(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
-                        color = Color(0xFFA855F7)
+                        color = activeProfile.primaryAccent
                     )
+
                     Text(
                         text = "Five interpretations of Android",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = appearance.onBackground
                     )
                 }
 
@@ -76,12 +93,12 @@ fun ProfileSwitcherDialog(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1C162A))
+                        .background(appearance.surface)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = "Dismiss",
-                        tint = Color.White
+                        tint = appearance.onSurface
                     )
                 }
             }
@@ -97,12 +114,20 @@ fun ProfileSwitcherDialog(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(profile.surfaceBase.copy(alpha = 0.9f))
+                            .clip(itemShape)
+                            .background(appearance.surface)
                             .border(
-                                width = if (isSelected) 2.dp else 1.dp,
-                                color = if (isSelected) profile.primaryAccent else Color(0x25FFFFFF),
-                                shape = RoundedCornerShape(20.dp)
+                                width = if (isSelected) {
+                                    2.dp
+                                } else {
+                                    appearance.borderWidth.dp
+                                },
+                                color = if (isSelected) {
+                                    profile.primaryAccent
+                                } else {
+                                    appearance.divider
+                                },
+                                shape = itemShape
                             )
                             .clickable {
                                 onSelectProfile(profile)
@@ -116,20 +141,24 @@ fun ProfileSwitcherDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Box(
                                         modifier = Modifier
                                             .size(12.dp)
                                             .clip(CircleShape)
                                             .background(profile.primaryAccent)
                                     )
+
                                     Spacer(modifier = Modifier.width(10.dp))
+
                                     Text(
                                         text = profile.title.uppercase(),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.sp,
-                                        color = profile.textPrimary
+                                        color = appearance.onSurface
                                     )
                                 }
 
@@ -157,14 +186,16 @@ fun ProfileSwitcherDialog(
                             Text(
                                 text = profile.description,
                                 fontSize = 12.sp,
-                                color = profile.textSecondary,
+                                color = appearance.onSurfaceVariant,
                                 lineHeight = 16.sp
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Miniature Representation of the Personality's Layout
-                            MiniaturePersonalityPreview(profile)
+                            MiniaturePersonalityPreview(
+                                profile = profile,
+                                appearance = appearance
+                            )
                         }
                     }
                 }
@@ -174,23 +205,43 @@ fun ProfileSwitcherDialog(
 }
 
 /**
- * Visual miniature preview communicating that these are structurally different experiences.
+ * Small structural preview of each personality.
+ *
+ * The five personalities intentionally remain different:
+ * - FLUID       = organic / reactive
+ * - PREMIUM     = precise / architectural
+ * - CALM        = quiet / minimal
+ * - FOCUS       = information / command oriented
+ * - EXPRESSIVE  = experimental / asymmetric
+ *
+ * The shared appearance controls the neutral surfaces and content hierarchy.
+ * Profile accent remains personality-specific.
  */
 @Composable
-private fun MiniaturePersonalityPreview(profile: LauncherProfile) {
+private fun MiniaturePersonalityPreview(
+    profile: LauncherProfile,
+    appearance: com.example.core.appearance.LauncherAppearance
+) {
+    val previewShape = RoundedCornerShape(
+        (appearance.cornerRadius * 0.5f).dp
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(profile.backgroundBase)
-            .border(0.5.dp, Color(0x30FFFFFF), RoundedCornerShape(12.dp))
+            .clip(previewShape)
+            .background(appearance.elevatedSurface)
+            .border(
+                width = (appearance.borderWidth * 0.5f).dp,
+                color = appearance.divider,
+                shape = previewShape
+            )
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         when (profile) {
             LauncherProfile.FLUID -> {
-                // Organic pill clock + dynamic pill Now Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -200,18 +251,26 @@ private fun MiniaturePersonalityPreview(profile: LauncherProfile) {
                         modifier = Modifier
                             .size(width = 64.dp, height = 24.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(profile.surfaceBase),
+                            .background(appearance.surface),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("12:45", fontSize = 10.sp, color = profile.primaryAccent, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "12:45",
+                            fontSize = 10.sp,
+                            color = profile.primaryAccent,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         repeat(3) {
                             Box(
                                 modifier = Modifier
                                     .size(18.dp)
                                     .clip(CircleShape)
-                                    .background(profile.surfaceBase)
+                                    .background(appearance.surface)
                             )
                         }
                     }
@@ -219,20 +278,27 @@ private fun MiniaturePersonalityPreview(profile: LauncherProfile) {
             }
 
             LauncherProfile.PREMIUM -> {
-                // Architectural split large clock + high contrast dock
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("18 : 54", fontSize = 14.sp, fontWeight = FontWeight.Light, color = profile.textPrimary)
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "18 : 54",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Light,
+                        color = appearance.onSurface
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         repeat(4) {
                             Box(
                                 modifier = Modifier
                                     .size(16.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(profile.surfaceBase)
+                                    .background(appearance.surface)
                             )
                         }
                     }
@@ -240,13 +306,17 @@ private fun MiniaturePersonalityPreview(profile: LauncherProfile) {
             }
 
             LauncherProfile.CALM -> {
-                // Minimal Zen inline line + generous whitespace
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("14:30  •  wednesday", fontSize = 11.sp, color = profile.textSecondary)
+                    Text(
+                        text = "14:30  •  wednesday",
+                        fontSize = 11.sp,
+                        color = appearance.onSurfaceVariant
+                    )
+
                     Box(
                         modifier = Modifier
                             .size(6.dp)
@@ -257,36 +327,64 @@ private fun MiniaturePersonalityPreview(profile: LauncherProfile) {
             }
 
             LauncherProfile.FOCUS -> {
-                // Dashboard agenda + task check + action bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("09:00  [2 TASKS]", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = profile.primaryAccent)
+                    Text(
+                        text = "09:00  [2 TASKS]",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = profile.primaryAccent
+                    )
+
                     Box(
                         modifier = Modifier
                             .size(width = 60.dp, height = 20.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(profile.surfaceBase),
+                            .background(appearance.surface),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("COMMAND", fontSize = 9.sp, color = Color.White)
+                        Text(
+                            text = "COMMAND",
+                            fontSize = 9.sp,
+                            color = appearance.onSurface
+                        )
                     }
                 }
             }
 
             LauncherProfile.EXPRESSIVE -> {
-                // Staggered massive digits + artistic asymmetrical arrangement
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("17\n07", fontSize = 16.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp, color = profile.primaryAccent)
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(profile.primaryAccent))
-                        Box(modifier = Modifier.size(16.dp).clip(RoundedCornerShape(4.dp)).background(profile.surfaceBase))
+                    Text(
+                        text = "17\n07",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 13.sp,
+                        color = profile.primaryAccent
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(profile.primaryAccent)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(appearance.surface)
+                        )
                     }
                 }
             }
