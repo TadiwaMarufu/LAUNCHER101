@@ -215,7 +215,7 @@ fun HomeCanvas(
                             } else {
                                 Modifier
                             }
-                        }
+                            )
                 ) {
                     when (item.type) {
 
