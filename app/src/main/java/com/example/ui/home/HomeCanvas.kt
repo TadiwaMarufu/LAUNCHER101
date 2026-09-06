@@ -1,37 +1,47 @@
 package com.example.ui.home
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.core.LauncherDependencies
+import com.example.core.engine.HomeLayoutStyle
 import com.example.core.engine.ProfileConfig
 import com.example.core.model.AppItem
 import com.example.core.model.HomeItem
 import com.example.core.model.HomeItemType
 import com.example.core.model.IconShape
 import com.example.core.model.LauncherProfile
-import com.example.core.model.MediaPlaybackState
-import com.example.core.model.NowBarItem
 import com.example.core.nowbar.NowBarController
 import com.example.core.widgets.AndroidAppWidgetHostView
 import com.example.ui.drawer.AppIconImage
@@ -40,17 +50,8 @@ import com.example.ui.widgets.PersonalityClockWidget
 import kotlin.math.roundToInt
 
 private const val GRID_COLUMNS = 5
-private const val GRID_ROWS = 8
+private const val GRID_ROWS = 10
 
-/**
- * User-owned launcher canvas.
- *
- * The canvas deliberately contains no hard-coded home components.
- * Everything visible on the home screen must exist as a HomeItem.
- *
- * Profiles influence presentation through the ProfileConfig supplied
- * by the parent, but profiles do not inject content into the canvas.
- */
 @Composable
 fun HomeCanvas(
     items: List<HomeItem>,
@@ -67,7 +68,6 @@ fun HomeCanvas(
     onItemClick: (HomeItem) -> Unit = {},
     onItemLongPress: (HomeItem) -> Unit = {},
     onItemMove: (HomeItem, Int, Int) -> Unit = { _, _, _ -> },
-    onLaunchApp: (AppItem) -> Unit = {},
     onProfileChipClick: () -> Unit = {},
     onMediaPlayToggle: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -90,13 +90,13 @@ fun HomeCanvas(
             .fillMaxSize()
             .pointerInput(editMode) {
                 detectTapGestures(
-                    onLongPress = {
-                        onLongPress()
-                    },
                     onTap = {
                         if (editMode) {
                             onEmptyTap()
                         }
+                    },
+                    onLongPress = {
+                        onLongPress()
                     }
                 )
             }
@@ -115,107 +115,144 @@ fun HomeCanvas(
                 val itemWidth = cellWidth * safeWidth
                 val itemHeight = cellHeight * safeHeight
 
-                val x = item.x.coerceIn(
+                val safeX = item.x.coerceIn(
                     0,
                     (GRID_COLUMNS - safeWidth).coerceAtLeast(0)
                 )
 
-                val y = item.y.coerceIn(
+                val safeY = item.y.coerceIn(
                     0,
                     (GRID_ROWS - safeHeight).coerceAtLeast(0)
                 )
 
-                val xOffset = cellWidth * x
-                val yOffset = cellHeight * y
+                val xOffset = cellWidth * safeX
+                val yOffset = cellHeight * safeY
+
+                var dragX by remember(item.id) {
+                    mutableFloatStateOf(0f)
+                }
+
+                var dragY by remember(item.id) {
+                    mutableFloatStateOf(0f)
+                }
+
+                val scale by animateFloatAsState(
+                    targetValue = if (editMode) 0.96f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    label = "home-item-scale"
+                )
+
+                val itemModifier = Modifier
+                    .offset {
+                        IntOffset(
+                            x = xOffset.roundToPx() + dragX.roundToInt(),
+                            y = yOffset.roundToPx() + dragY.roundToInt()
+                        )
+                    }
+                    .width(itemWidth)
+                    .height(itemHeight)
+                    .scale(scale)
+                    .clip(
+                        RoundedCornerShape(
+                            config.cornerRadius
+                        )
+                    )
+                    .then(
+                        if (editMode) {
+                            Modifier.background(
+                                profile.primaryAccent.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .pointerInput(item.id, editMode) {
+                        detectTapGestures(
+                            onTap = {
+                                onItemClick(item)
+                            },
+                            onLongPress = {
+                                onItemLongPress(item)
+                            }
+                        )
+                    }
+                    .then(
+                        if (editMode) {
+                            Modifier.pointerInput(
+                                item.id + "-drag"
+                            ) {
+                                detectDragGestures(
+                                    onDragStart = {
+                                        dragX = 0f
+                                        dragY = 0f
+                                    },
+                                    onDrag = { change, amount ->
+                                        change.consume()
+
+                                        dragX += amount.x
+                                        dragY += amount.y
+                                    },
+                                    onDragEnd = {
+                                        val columnsMoved =
+                                            (
+                                                dragX /
+                                                    cellWidth.toPx()
+                                                ).roundToInt()
+
+                                        val rowsMoved =
+                                            (
+                                                dragY /
+                                                    cellHeight.toPx()
+                                                ).roundToInt()
+
+                                        if (
+                                            columnsMoved != 0 ||
+                                            rowsMoved != 0
+                                        ) {
+                                            onItemMove(
+                                                item,
+                                                (
+                                                    safeX +
+                                                        columnsMoved
+                                                ).coerceIn(
+                                                    0,
+                                                    (
+                                                        GRID_COLUMNS -
+                                                            safeWidth
+                                                    ).coerceAtLeast(0)
+                                                ),
+                                                (
+                                                    safeY +
+                                                        rowsMoved
+                                                ).coerceIn(
+                                                    0,
+                                                    (
+                                                        GRID_ROWS -
+                                                            safeHeight
+                                                    ).coerceAtLeast(0)
+                                                )
+                                            )
+                                        }
+
+                                        dragX = 0f
+                                        dragY = 0f
+                                    },
+                                    onDragCancel = {
+                                        dragX = 0f
+                                        dragY = 0f
+                                    }
+                                )
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
 
                 Box(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x = xOffset.roundToPx(),
-                                y = yOffset.roundToPx()
-                            )
-                        }
-                        .width(itemWidth)
-                        .height(itemHeight)
-                        .clip(
-                            RoundedCornerShape(
-                                if (editMode) 18.dp else 0.dp
-                            )
-                        )
-                        .then(
-                            if (editMode) {
-                                Modifier.background(
-                                    Color.Black.copy(alpha = 0.07f)
-                                )
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .pointerInput(item.id) {
-                            detectTapGestures(
-                                onTap = {
-                                    onItemClick(item)
-                                },
-                                onLongPress = {
-                                    onItemLongPress(item)
-                                }
-                            )
-                        }
-                        .then(
-                            if (editMode) {
-                                Modifier.pointerInput(item.id + "-drag") {
-                                    detectDragGestures(
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-
-                                            val columnsMoved =
-                                                (
-                                                    dragAmount.x /
-                                                        cellWidth.toPx()
-                                                    ).roundToInt()
-
-                                            val rowsMoved =
-                                                (
-                                                    dragAmount.y /
-                                                        cellHeight.toPx()
-                                                    ).roundToInt()
-
-                                            if (
-                                                columnsMoved != 0 ||
-                                                rowsMoved != 0
-                                            ) {
-                                                onItemMove(
-                                                    item,
-                                                    (
-                                                        item.x +
-                                                            columnsMoved
-                                                    ).coerceIn(
-                                                        0,
-                                                        (
-                                                            GRID_COLUMNS -
-                                                                safeWidth
-                                                        ).coerceAtLeast(0)
-                                                    ),
-                                                    (
-                                                        item.y +
-                                                            rowsMoved
-                                                    ).coerceIn(
-                                                        0,
-                                                        (
-                                                            GRID_ROWS -
-                                                                safeHeight
-                                                        ).coerceAtLeast(0)
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    )
-                                }
-                            } else {
-                                Modifier
-                            }
-                            )
+                    modifier = itemModifier
                 ) {
                     when (item.type) {
 
@@ -235,20 +272,28 @@ fun HomeCanvas(
                                 mediaState = mediaState,
                                 profile = profile,
                                 config = config,
-                                onProfileChipClick = onProfileChipClick,
-                                onMediaPlayToggle = onMediaPlayToggle,
-                                onSearchClick = onSearchClick,
-                                onDrawerClick = onDrawerClick,
-                                onSettingsClick = onSettingsClick,
-                                modifier = Modifier.fillMaxSize()
+                                onProfileChipClick =
+                                    onProfileChipClick,
+                                onMediaPlayToggle =
+                                    onMediaPlayToggle,
+                                onSearchClick =
+                                    onSearchClick,
+                                onDrawerClick =
+                                    onDrawerClick,
+                                onSettingsClick =
+                                    onSettingsClick,
+                                modifier =
+                                    Modifier.fillMaxSize()
                             )
                         }
 
                         HomeItemType.APP -> {
-                            val componentName =
+                            val component =
                                 if (
-                                    !item.packageName.isNullOrBlank() &&
-                                    !item.activityName.isNullOrBlank()
+                                    !item.packageName
+                                        .isNullOrBlank() &&
+                                    !item.activityName
+                                        .isNullOrBlank()
                                 ) {
                                     "${item.packageName}/${item.activityName}"
                                 } else {
@@ -256,82 +301,195 @@ fun HomeCanvas(
                                 }
 
                             val app = allApps.firstOrNull {
-                                it.componentNameString == componentName
+                                it.componentNameString == component
                             }
 
                             if (app != null) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment =
-                                            Alignment.CenterHorizontally
-                                    ) {
-                                        AppIconImage(
-                                            drawable = app.icon,
-                                            label = app.label,
-                                            iconShape = iconShape,
-                                            size = 48.dp,
-                                            accentColor =
-                                                profile.primaryAccent
-                                        )
-
-                                        if (showIconLabels) {
-                                            Text(
-                                                text = app.label,
-                                                textAlign =
-                                                    TextAlign.Center,
-                                                color =
-                                                    profile.textPrimary
-                                            )
-                                        }
-                                    }
-                                }
+                                AppCanvasItem(
+                                    app = app,
+                                    iconShape = iconShape,
+                                    showLabel =
+                                        showIconLabels &&
+                                            config.showAppLabels,
+                                    profile = profile,
+                                    modifier =
+                                        Modifier.fillMaxSize()
+                                )
                             }
                         }
 
                         HomeItemType.WIDGET -> {
-                            val appWidgetId = item.appWidgetId
-
-                            if (appWidgetId != null) {
+                            item.appWidgetId?.let { widgetId ->
                                 AndroidAppWidgetHostView(
-                                    appWidgetHost = widgetManager.host,
+                                    appWidgetHost =
+                                        widgetManager.host,
                                     appWidgetManager =
                                         widgetManager.appWidgetManager,
-                                    appWidgetId = appWidgetId,
-                                    modifier = Modifier.fillMaxSize()
+                                    appWidgetId = widgetId,
+                                    modifier =
+                                        Modifier.fillMaxSize()
                                 )
                             }
                         }
 
                         HomeItemType.SHORTCUT -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item.title ?: "Shortcut",
-                                    color = profile.textPrimary,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            CanvasPlaceholder(
+                                title =
+                                    item.title ?: "Shortcut",
+                                accent =
+                                    profile.primaryAccent,
+                                profile = profile
+                            )
                         }
 
                         HomeItemType.FOLDER -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item.title ?: "Folder",
-                                    color = profile.textPrimary,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            CanvasPlaceholder(
+                                title =
+                                    item.title ?: "Folder",
+                                accent =
+                                    profile.primaryAccent,
+                                profile = profile
+                            )
                         }
+                    }
+
+                    if (editMode) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(
+                                    RoundedCornerShape(
+                                        config.cornerRadius
+                                    )
+                                )
+                                .background(
+                                    profile.primaryAccent.copy(
+                                        alpha = 0.045f
+                                    )
+                                )
+                        )
                     }
                 }
             }
+
+        if (editMode && items.isEmpty()) {
+            EmptyCanvasHint(
+                profile = profile,
+                layout = config.homeLayout
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppCanvasItem(
+    app: AppItem,
+    iconShape: IconShape,
+    showLabel: Boolean,
+    profile: LauncherProfile,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.padding(
+            horizontal = 6.dp,
+            vertical = 8.dp
+        ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            AppIconImage(
+                drawable = app.icon,
+                label = app.label,
+                iconShape = iconShape,
+                size = 54.dp,
+                accentColor = profile.primaryAccent
+            )
+
+            if (showLabel) {
+                Text(
+                    text = app.label,
+                    color = profile.textPrimary,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CanvasPlaceholder(
+    title: String,
+    accent: Color,
+    profile: LauncherProfile
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(
+                profile.textPrimary.copy(alpha = 0.045f)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(38.dp)
+                    .height(38.dp)
+                    .clip(CircleShape)
+                    .background(
+                        accent.copy(alpha = 0.12f)
+                    )
+            )
+
+            Text(
+                text = title,
+                color = profile.textPrimary,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyCanvasHint(
+    profile: LauncherProfile,
+    layout: HomeLayoutStyle
+) {
+    val text = when (layout) {
+        HomeLayoutStyle.FLUID_ORGANIC ->
+            "Long press to shape your space"
+
+        HomeLayoutStyle.PREMIUM_ARCHITECTURAL ->
+            "Long press to customize"
+
+        HomeLayoutStyle.CALM_MINIMALIST ->
+            "Long press"
+
+        HomeLayoutStyle.FOCUS_DASHBOARD ->
+            "Long press to configure"
+
+        HomeLayoutStyle.EXPRESSIVE_AVANT_GARDE ->
+            "Long press to create"
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = profile.textPrimary.copy(alpha = 0.34f),
+            fontWeight = FontWeight.Medium
+        )
     }
 }
