@@ -89,7 +89,7 @@ fun NowBarView(
             .fillMaxWidth()
             .clip(barShape)
             .background(backgroundBrush)
-            .border(appearance.borderWidth, appearance.divider, barShape)
+            .border(appearance.borderWidth.dp, appearance.divider, barShape)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .animateContentSize(),
         contentAlignment = Alignment.Center

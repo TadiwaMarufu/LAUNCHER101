@@ -71,6 +71,8 @@ fun AppIconImage(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
+
     val shapeModifier = when (iconShape) {
         IconShape.CIRCLE -> CircleShape
         IconShape.SQUIRCLE -> RoundedCornerShape(18.dp)

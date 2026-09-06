@@ -97,7 +97,7 @@ fun PersonalityClockWidget(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(config.cornerRadius))
                     .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-                    .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+                    .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
                     .clickable { onClockClick() }
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
@@ -234,7 +234,7 @@ fun PersonalityClockWidget(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(config.cornerRadius))
                     .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-                    .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+                    .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
                     .clickable { onClockClick() }
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -330,7 +330,7 @@ fun MediaWidgetCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(config.cornerRadius))
             .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+            .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(16.dp)
     ) {
         Column {
@@ -446,7 +446,7 @@ fun FocusTasksWidgetCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(config.cornerRadius))
             .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+            .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(16.dp)
     ) {
         Column {
@@ -570,7 +570,7 @@ fun WeatherCard(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
             .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+            .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -611,7 +611,7 @@ fun SystemTelemetryCard(
         modifier = modifier
             .clip(RoundedCornerShape(config.cornerRadius))
             .background(appearance.surface.copy(alpha = appearance.surfaceAlpha))
-            .border(appearance.borderWidth, appearance.divider, RoundedCornerShape(config.cornerRadius))
+            .border(appearance.borderWidth.dp, appearance.divider, RoundedCornerShape(config.cornerRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

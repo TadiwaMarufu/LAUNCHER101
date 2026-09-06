@@ -391,6 +391,8 @@ private fun AppCanvasItem(
     profile: LauncherProfile,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalLauncherAppearance.current
+
     Box(
         modifier = modifier.padding(
             horizontal = 6.dp,
@@ -429,6 +431,8 @@ private fun CanvasPlaceholder(
     accent: Color,
     profile: LauncherProfile
 ) {
+    val appearance = LocalLauncherAppearance.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -467,6 +471,8 @@ private fun EmptyCanvasHint(
     profile: LauncherProfile,
     layout: HomeLayoutStyle
 ) {
+    val appearance = LocalLauncherAppearance.current
+
     val text = when (layout) {
         HomeLayoutStyle.FLUID_ORGANIC ->
             "Long press to shape your space"
