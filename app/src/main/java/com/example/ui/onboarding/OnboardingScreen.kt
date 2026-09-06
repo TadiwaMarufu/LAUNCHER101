@@ -37,15 +37,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.LauncherProfile
+import com.example.ui.theme.LocalLauncherAppearance
 
 @Composable
 fun OnboardingScreen(
@@ -53,8 +54,22 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val appearance = LocalLauncherAppearance.current
     val scrollState = rememberScrollState()
-    var selectedProfile by remember { mutableStateOf(LauncherProfile.FLUID) }
+
+    var selectedProfile by remember {
+        mutableStateOf(LauncherProfile.FLUID)
+    }
+
+    val selectedAccent = selectedProfile.primaryAccent
+
+    val screenShape = RoundedCornerShape(
+        appearance.cornerRadius.dp
+    )
+
+    val cardShape = RoundedCornerShape(
+        (appearance.cornerRadius * 0.67f).dp
+    )
 
     Box(
         modifier = modifier
@@ -62,8 +77,8 @@ fun OnboardingScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0F081E),
-                        Color(0xFF06030B)
+                        appearance.surface,
+                        appearance.background
                     )
                 )
             )
@@ -77,14 +92,17 @@ fun OnboardingScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Brand Logo Orb
+            // Brand mark
             Box(
                 modifier = Modifier
                     .size(72.dp)
                     .clip(CircleShape)
                     .background(
                         brush = Brush.radialGradient(
-                            colors = listOf(Color(0xFFC084FC), Color(0xFF6B21A8))
+                            colors = listOf(
+                                selectedAccent.copy(alpha = 0.95f),
+                                selectedAccent.copy(alpha = 0.35f)
+                            )
                         )
                     ),
                 contentAlignment = Alignment.Center
@@ -93,7 +111,7 @@ fun OnboardingScreen(
                     text = "λ",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = selectedAccent.contrastColor()
                 )
             }
 
@@ -103,7 +121,7 @@ fun OnboardingScreen(
                 text = "The Purple Launcher",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+                color = appearance.onBackground,
                 textAlign = TextAlign.Center
             )
 
@@ -113,7 +131,7 @@ fun OnboardingScreen(
                 text = "Android, in your own frequency.",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFFA855F7),
+                color = selectedAccent,
                 textAlign = TextAlign.Center
             )
 
@@ -122,7 +140,7 @@ fun OnboardingScreen(
             Text(
                 text = "Built for enthusiasts who wanted Android to feel personal, experimental, and fun again. Choose how your device behaves:",
                 fontSize = 13.sp,
-                color = Color(0xFF94A3B8),
+                color = appearance.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 19.sp,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -130,22 +148,39 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5 Personalities Selector Cards
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 LauncherProfile.values().forEach { profile ->
                     val isSelected = profile == selectedProfile
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) profile.surfaceBase else Color(0xFF140F22))
-                            .border(
-                                width = if (isSelected) 2.dp else 1.dp,
-                                color = if (isSelected) profile.primaryAccent else Color(0x22FFFFFF),
-                                shape = RoundedCornerShape(16.dp)
+                            .clip(cardShape)
+                            .background(
+                                if (isSelected) {
+                                    profile.primaryAccent.copy(alpha = 0.12f)
+                                } else {
+                                    appearance.surface
+                                }
                             )
-                            .clickable { selectedProfile = profile }
+                            .border(
+                                width = if (isSelected) {
+                                    2.dp
+                                } else {
+                                    appearance.borderWidth.dp
+                                },
+                                color = if (isSelected) {
+                                    profile.primaryAccent
+                                } else {
+                                    appearance.divider
+                                },
+                                shape = cardShape
+                            )
+                            .clickable {
+                                selectedProfile = profile
+                            }
                             .padding(14.dp)
                     ) {
                         Row(
@@ -153,23 +188,31 @@ fun OnboardingScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Box(
                                         modifier = Modifier
                                             .size(10.dp)
                                             .clip(CircleShape)
                                             .background(profile.primaryAccent)
                                     )
+
                                     Spacer(modifier = Modifier.width(8.dp))
+
                                     Text(
                                         text = profile.title,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = appearance.onSurface
                                     )
                                 }
+
                                 Spacer(modifier = Modifier.height(2.dp))
+
                                 Text(
                                     text = profile.tagline,
                                     fontSize = 12.sp,
@@ -192,27 +235,18 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Action: Set as Default Launcher
             OutlinedButton(
                 onClick = {
-                    try {
-                        val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        context.startActivity(intent)
-                    } catch (_: Exception) {
-                        try {
-                            val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        } catch (_: Exception) {}
-                    }
+                    openDefaultLauncherSettings(context)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = cardShape,
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFA855F7)
+                    contentColor = selectedAccent
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = appearance.borderWidth.dp,
+                    color = appearance.divider
                 )
             ) {
                 Icon(
@@ -220,39 +254,82 @@ fun OnboardingScreen(
                     contentDescription = "Set Default",
                     modifier = Modifier.size(18.dp)
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Set as Default Launcher", fontWeight = FontWeight.SemiBold)
+
+                Text(
+                    text = "Set as Default Launcher",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Action: Start Experience
             Button(
-                onClick = { onComplete(selectedProfile) },
+                onClick = {
+                    onComplete(selectedProfile)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = cardShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFA855F7)
+                    containerColor = selectedAccent,
+                    contentColor = selectedAccent.contrastColor()
                 )
             ) {
                 Text(
                     text = "Launch ${selectedProfile.title} Frequency",
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    fontWeight = FontWeight.Bold
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Icon(
                     imageVector = Icons.Rounded.ArrowForward,
                     contentDescription = "Start",
-                    tint = Color.White,
+                    tint = selectedAccent.contrastColor(),
                     modifier = Modifier.size(18.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+private fun openDefaultLauncherSettings(context: Context) {
+    try {
+        val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            // Some OEMs expose neither settings activity.
+            // Failing silently keeps onboarding stable.
+        }
+    }
+}
+
+private fun Color.contrastColor(): Color {
+    val luminance = (0.299f * red) +
+        (0.587f * green) +
+        (0.114f * blue)
+
+    return if (luminance > 0.55f) {
+        Color.Black
+    } else {
+        Color.White
     }
 }
